@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Quản lý thiết bị IT{% endblock %}</title>
+    <!-- Bulma CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <!-- Font Awesome cho icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- jQuery và Select2 cho autocomplete -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <style>
+        /* Custom styles cho Bulma */
+        .navbar-brand {
+            font-weight: 600;
+        }
+        .select2-container {
+            width: 100% !important;
+        }
+        .select2-container--default .select2-selection--single {
+            height: 2.5em;
+            border: 1px solid #dbdbdb;
+            border-radius: 4px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 2.5em;
+            padding-left: 0.75em;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 2.5em;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar is-primary" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="{% url 'equipment:index' %}">
+                <i class="fas fa-laptop mr-2"></i>
+                <strong>Quản lý thiết bị IT</strong>
+            </a>
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMenu">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
+        </div>
+        <div id="navbarMenu" class="navbar-menu">
+            <div class="navbar-end">
+                <a class="navbar-item" href="{% url 'equipment:index' %}">
+                    <i class="fas fa-home mr-2"></i> Trang chủ
+                </a>
+                {% if user.is_authenticated %}
+                    <a class="navbar-item" href="{% url 'equipment:equipment_create' %}">
+                        <i class="fas fa-plus-circle mr-2"></i> Thêm thiết bị
+                    </a>
+                    <a class="navbar-item" href="{% url 'admin:index' %}">
+                        <i class="fas fa-cog mr-2"></i> Admin
+                    </a>
+                    <a class="navbar-item" href="{% url 'equipment:logout' %}">
+                        <i class="fas fa-sign-out-alt mr-2"></i> Đăng xuất ({{ user.username }})
+                    </a>
+                {% else %}
+                    <a class="navbar-item" href="{% url 'equipment:login' %}">
+                        <i class="fas fa-sign-in-alt mr-2"></i> Đăng nhập
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <section class="section">
+        <div class="container">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="notification is-{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %} is-light">
+                        <button class="delete" onclick="this.parentElement.remove()"></button>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="content has-text-centered">
+            <p>&copy; 2024 Quản lý thiết bị IT - Saigonbooks, Zenbooks, Pegaholdings</p>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        document.addEventListener('DOMContentLoaded', () => {
+            const navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+            if (navbarBurgers.length > 0) {
+                navbarBurgers.forEach(el => {
+                    el.addEventListener('click', () => {
+                        const target = el.dataset.target;
+                        const $target = document.getElementById(target);
+                        el.classList.toggle('is-active');
+                        $target.classList.toggle('is-active');
+                    });
+                });
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

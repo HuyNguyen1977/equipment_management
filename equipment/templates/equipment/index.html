@@ -1,0 +1,218 @@
+{% extends 'equipment/base.html' %}
+
+{% block title %}Danh sách thiết bị{% endblock %}
+
+{% block content %}
+<div class="mb-5">
+    <h1 class="title is-3">
+        <span class="icon-text">
+            <span class="icon">
+                <i class="fas fa-list"></i>
+            </span>
+            <span>Danh sách thiết bị</span>
+        </span>
+    </h1>
+    <p class="subtitle">Quản lý thiết bị công nghệ thông tin</p>
+</div>
+
+<!-- Filters -->
+<div class="card mb-5">
+    <div class="card-content">
+        <form method="get">
+            <div class="columns">
+                <div class="column is-one-quarter">
+                    <div class="field">
+                        <label class="label">Công ty</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="company">
+                                    <option value="">Tất cả</option>
+                                    {% for company in companies %}
+                                        <option value="{{ company.id }}" {% if selected_company == company.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ company.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-one-quarter">
+                    <div class="field">
+                        <label class="label">Loại thiết bị</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="equipment_type">
+                                    <option value="">Tất cả</option>
+                                    <option value="laptop" {% if selected_type == "laptop" %}selected{% endif %}>Laptop</option>
+                                    <option value="desktop" {% if selected_type == "desktop" %}selected{% endif %}>Desktop</option>
+                                    <option value="router" {% if selected_type == "router" %}selected{% endif %}>Router</option>
+                                    <option value="switch" {% if selected_type == "switch" %}selected{% endif %}>Switch</option>
+                                    <option value="printer" {% if selected_type == "printer" %}selected{% endif %}>Máy in</option>
+                                    <option value="scanner" {% if selected_type == "scanner" %}selected{% endif %}>Máy quét</option>
+                                    <option value="other" {% if selected_type == "other" %}selected{% endif %}>Khác</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Tìm kiếm</label>
+                        <div class="control">
+                            <input type="text" name="search" class="input" placeholder="Tên, mã, tên máy, người dùng..." value="{% if search_query %}{{ search_query }}{% endif %}">
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-narrow">
+                    <div class="field">
+                        <label class="label">&nbsp;</label>
+                        <div class="control">
+                            <button type="submit" class="button is-primary">
+                                <span class="icon">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <span>Tìm</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Equipment List -->
+<div class="card">
+    <header class="card-header">
+        <p class="card-header-title">
+            <span class="icon-text">
+                <span class="icon">
+                    <i class="fas fa-desktop"></i>
+                </span>
+                <span>Thiết bị ({{ equipment_list.count }})</span>
+            </span>
+        </p>
+        <div class="card-header-icon">
+            {% if user.is_authenticated %}
+                <a href="{% url 'equipment:equipment_create' %}" class="button is-success is-small">
+                    <span class="icon">
+                        <i class="fas fa-plus-circle"></i>
+                    </span>
+                    <span>Thêm mới</span>
+                </a>
+            {% else %}
+                <a href="{% url 'equipment:login' %}" class="button is-outlined is-primary is-small">
+                    <span class="icon">
+                        <i class="fas fa-sign-in-alt"></i>
+                    </span>
+                    <span>Đăng nhập để thêm thiết bị</span>
+                </a>
+            {% endif %}
+        </div>
+    </header>
+    <div class="card-content" style="padding: 0;">
+        {% if equipment_list %}
+            <div class="table-container">
+                <table class="table is-fullwidth is-hoverable mb-0">
+                    <thead>
+                        <tr>
+                            <th>Mã</th>
+                            <th>Tên thiết bị</th>
+                            <th>Công ty</th>
+                            <th>Loại</th>
+                            <th>Người sử dụng</th>
+                            <th>Ngày đưa vào sử dụng</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for equipment in equipment_list %}
+                            <tr>
+                                <td><strong>{{ equipment.code }}</strong></td>
+                                <td>{{ equipment.name }}</td>
+                                <td>{{ equipment.company.name }}</td>
+                                <td>
+                                    <span class="tag is-info">{{ equipment.get_equipment_type_display }}</span>
+                                </td>
+                                <td>
+                                    {% if equipment.current_user %}
+                                        <span class="tag is-primary">
+                                            <span class="icon">
+                                                <i class="fas fa-user"></i>
+                                            </span>
+                                            <span>{{ equipment.current_user.get_full_name|default:equipment.current_user.username }}</span>
+                                        </span>
+                                    {% else %}
+                                        <span class="has-text-grey">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if equipment.commission_date %}
+                                        {{ equipment.commission_date|date:"d/m/Y" }}
+                                    {% else %}
+                                        <span class="has-text-grey">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if equipment.has_liquidation %}
+                                        <span class="tag is-danger">Đã thanh lý</span>
+                                    {% elif equipment.is_active %}
+                                        <span class="tag is-success">Hoạt động</span>
+                                    {% else %}
+                                        <span class="tag is-light">Ngừng</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="buttons">
+                                        <a href="{% url 'equipment:equipment_detail' equipment.pk %}" class="button is-small is-outlined is-primary" title="Chi tiết">
+                                            <span class="icon">
+                                                <i class="fas fa-eye"></i>
+                                            </span>
+                                        </a>
+                                        <a href="{% url 'equipment:equipment_history' equipment.pk %}" class="button is-small is-outlined is-info" title="Lịch sử">
+                                            <span class="icon">
+                                                <i class="fas fa-history"></i>
+                                            </span>
+                                        </a>
+                                        {% if user.is_authenticated %}
+                                            <a href="{% url 'equipment:equipment_edit' equipment.pk %}" class="button is-small is-outlined is-warning" title="Sửa">
+                                                <span class="icon">
+                                                    <i class="fas fa-edit"></i>
+                                                </span>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="has-text-centered" style="padding: 3rem;">
+                <span class="icon is-large has-text-grey-light">
+                    <i class="fas fa-inbox fa-3x"></i>
+                </span>
+                <p class="has-text-grey mt-4">Không có thiết bị nào</p>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'equipment:equipment_create' %}" class="button is-primary mt-4">
+                        <span class="icon">
+                            <i class="fas fa-plus-circle"></i>
+                        </span>
+                        <span>Thêm thiết bị đầu tiên</span>
+                    </a>
+                {% else %}
+                    <a href="{% url 'equipment:login' %}" class="button is-primary mt-4">
+                        <span class="icon">
+                            <i class="fas fa-sign-in-alt"></i>
+                        </span>
+                        <span>Đăng nhập để thêm thiết bị</span>
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,428 @@
+{% extends 'equipment/base.html' %}
+
+{% block title %}{{ equipment.name }}{% endblock %}
+
+{% block content %}
+<div class="level mb-5">
+    <div class="level-left">
+        <div class="level-item">
+            <h2 class="title is-3">
+                <span class="icon-text">
+                    <span class="icon">
+                        <i class="fas fa-desktop"></i>
+                    </span>
+                    <span>{{ equipment.name }}</span>
+                </span>
+            </h2>
+        </div>
+    </div>
+    <div class="level-right">
+        <div class="level-item">
+            <div class="buttons">
+                <a href="{% url 'equipment:equipment_history' equipment.pk %}" class="button is-info">
+                    <span class="icon">
+                        <i class="fas fa-history"></i>
+                    </span>
+                    <span>Xem lịch sử</span>
+                </a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'equipment:equipment_edit' equipment.pk %}" class="button is-warning">
+                        <span class="icon">
+                            <i class="fas fa-edit"></i>
+                        </span>
+                        <span>Sửa</span>
+                    </a>
+                {% endif %}
+                <a href="{% url 'equipment:index' %}" class="button is-light">
+                    <span class="icon">
+                        <i class="fas fa-arrow-left"></i>
+                    </span>
+                    <span>Quay lại</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Nút nhanh thêm lịch sử -->
+{% if user.is_authenticated %}
+<div class="card mb-5">
+    <header class="card-header">
+        <p class="card-header-title">
+            <span class="icon-text">
+                <span class="icon">
+                    <i class="fas fa-bolt"></i>
+                </span>
+                <span>Thao tác nhanh</span>
+            </span>
+        </p>
+    </header>
+    <div class="card-content">
+        <div class="columns is-multiline">
+            <div class="column is-one-quarter">
+                <a href="{% url 'equipment:history_add' equipment.pk %}?action_type=repair" class="button is-outlined is-danger is-fullwidth">
+                    <span class="icon">
+                        <i class="fas fa-tools"></i>
+                    </span>
+                    <span>Sửa chữa</span>
+                </a>
+            </div>
+            <div class="column is-one-quarter">
+                <a href="{% url 'equipment:history_add' equipment.pk %}?action_type=movement" class="button is-outlined is-primary is-fullwidth">
+                    <span class="icon">
+                        <i class="fas fa-exchange-alt"></i>
+                    </span>
+                    <span>Di chuyển</span>
+                </a>
+            </div>
+            <div class="column is-one-quarter">
+                <a href="{% url 'equipment:history_add' equipment.pk %}?action_type=maintenance" class="button is-outlined is-info is-fullwidth">
+                    <span class="icon">
+                        <i class="fas fa-cog"></i>
+                    </span>
+                    <span>Bảo trì</span>
+                </a>
+            </div>
+            <div class="column is-one-quarter">
+                <a href="{% url 'equipment:history_add' equipment.pk %}?action_type=liquidation" class="button is-outlined is-warning is-fullwidth">
+                    <span class="icon">
+                        <i class="fas fa-trash"></i>
+                    </span>
+                    <span>Thanh lý</span>
+                </a>
+            </div>
+            <div class="column is-one-quarter">
+                <a href="{% url 'equipment:history_add' equipment.pk %}?action_type=replacement" class="button is-outlined is-light is-fullwidth">
+                    <span class="icon">
+                        <i class="fas fa-redo"></i>
+                    </span>
+                    <span>Thay thế</span>
+                </a>
+            </div>
+            <div class="column is-one-quarter">
+                <a href="{% url 'equipment:history_add' equipment.pk %}?action_type=upgrade" class="button is-outlined is-success is-fullwidth">
+                    <span class="icon">
+                        <i class="fas fa-arrow-up"></i>
+                    </span>
+                    <span>Nâng cấp</span>
+                </a>
+            </div>
+            <div class="column is-one-quarter">
+                <a href="{% url 'equipment:history_add' equipment.pk %}" class="button is-outlined is-dark is-fullwidth">
+                    <span class="icon">
+                        <i class="fas fa-plus-circle"></i>
+                    </span>
+                    <span>Thêm khác</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="columns">
+    <!-- Thông tin cơ bản -->
+    <div class="column is-half">
+        <div class="card">
+            <header class="card-header">
+                <p class="card-header-title">
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+                        <span>Thông tin cơ bản</span>
+                    </span>
+                </p>
+            </header>
+            <div class="card-content">
+                <table class="table is-fullwidth">
+                    <tbody>
+                        <tr>
+                            <th width="40%">Mã thiết bị:</th>
+                            <td><strong>{{ equipment.code }}</strong></td>
+                        </tr>
+                        <tr>
+                            <th>Công ty:</th>
+                            <td>{{ equipment.company.name }}</td>
+                        </tr>
+                        <tr>
+                            <th>Loại thiết bị:</th>
+                            <td><span class="tag is-info">{{ equipment.get_equipment_type_display }}</span></td>
+                        </tr>
+                        <tr>
+                            <th>Ngày đưa vào sử dụng:</th>
+                            <td>
+                                {% if equipment.commission_date %}
+                                    {{ equipment.commission_date|date:"d/m/Y" }}
+                                {% else %}
+                                    <span class="has-text-grey">Chưa có</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Trạng thái:</th>
+                            <td>
+                                {% if has_liquidation %}
+                                    <span class="tag is-danger">Đã thanh lý</span>
+                                {% elif equipment.is_active %}
+                                    <span class="tag is-success">Đang hoạt động</span>
+                                {% else %}
+                                    <span class="tag is-light">Ngừng hoạt động</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Người đang sử dụng:</th>
+                            <td>
+                                {% if equipment.current_user %}
+                                    <span class="tag is-primary">
+                                        <span class="icon">
+                                            <i class="fas fa-user"></i>
+                                        </span>
+                                        <span>{{ equipment.current_user.get_full_name|default:equipment.current_user.username }}</span>
+                                    </span>
+                                {% else %}
+                                    <span class="has-text-grey">Chưa giao cho ai</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Số người đã sử dụng:</th>
+                            <td>
+                                <span class="tag is-info">{{ users_count }} người</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thông tin kỹ thuật (cho Laptop/Desktop) -->
+    {% if equipment.equipment_type in 'laptop,desktop' %}
+    <div class="column is-half">
+        <div class="card">
+            <header class="card-header">
+                <p class="card-header-title">
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="fas fa-microchip"></i>
+                        </span>
+                        <span>Thông tin kỹ thuật</span>
+                    </span>
+                </p>
+            </header>
+            <div class="card-content">
+                <table class="table is-fullwidth">
+                    <tbody>
+                        {% if equipment.machine_name %}
+                        <tr>
+                            <th width="40%">Tên máy:</th>
+                            <td>{{ equipment.machine_name }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if equipment.operating_system %}
+                        <tr>
+                            <th>Hệ điều hành:</th>
+                            <td>{{ equipment.operating_system }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if equipment.system_manufacturer %}
+                        <tr>
+                            <th>Nhà sản xuất:</th>
+                            <td>{{ equipment.system_manufacturer }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if equipment.system_model %}
+                        <tr>
+                            <th>Model:</th>
+                            <td>{{ equipment.system_model }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if equipment.processor %}
+                        <tr>
+                            <th>Bộ xử lý:</th>
+                            <td>{{ equipment.processor }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if equipment.memory %}
+                        <tr>
+                            <th>Bộ nhớ:</th>
+                            <td>{{ equipment.memory }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if equipment.graphics_card %}
+                        <tr>
+                            <th>Card đồ họa:</th>
+                            <td>{{ equipment.graphics_card }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if equipment.monitor_name %}
+                        <tr>
+                            <th>Monitor Name:</th>
+                            <td>{{ equipment.monitor_name }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if equipment.monitor_model %}
+                        <tr>
+                            <th>Monitor Model:</th>
+                            <td>{{ equipment.monitor_model }}</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Thông số kỹ thuật -->
+{% if equipment.technical_specs %}
+<div class="card mt-5">
+    <header class="card-header">
+        <p class="card-header-title">
+            <span class="icon-text">
+                <span class="icon">
+                    <i class="fas fa-list-check"></i>
+                </span>
+                <span>Thông số kỹ thuật</span>
+            </span>
+        </p>
+    </header>
+    <div class="card-content">
+        <div class="columns is-multiline">
+            {% for key, value in equipment.technical_specs.items %}
+                <div class="column is-half">
+                    <strong>{{ key }}:</strong> {{ value }}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Tài liệu hướng dẫn -->
+{% if equipment.documentation %}
+<div class="card mt-5">
+    <header class="card-header">
+        <p class="card-header-title">
+            <span class="icon-text">
+                <span class="icon">
+                    <i class="fas fa-file-alt"></i>
+                </span>
+                <span>Tài liệu hướng dẫn kèm theo</span>
+            </span>
+        </p>
+    </header>
+    <div class="card-content">
+        <div class="content">{{ equipment.documentation|linebreaks }}</div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Lịch sử người dùng -->
+{% if user_histories %}
+<div class="card mt-5">
+    <header class="card-header">
+        <p class="card-header-title">
+            <span class="icon-text">
+                <span class="icon">
+                    <i class="fas fa-users"></i>
+                </span>
+                <span>Lịch sử người sử dụng ({{ users_count }} người đã sử dụng)</span>
+            </span>
+        </p>
+    </header>
+    <div class="card-content" style="padding: 0;">
+        <div class="table-container">
+            <table class="table is-fullwidth is-narrow">
+                <thead>
+                    <tr>
+                        <th>Ngày</th>
+                        <th>Loại</th>
+                        <th>Nội dung</th>
+                        <th>Ký tên</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for history in user_histories|slice:":10" %}
+                        <tr>
+                            <td>{{ history.action_date|date:"d/m/Y" }}</td>
+                            <td>
+                                {% if history.action_type == 'user_assignment' %}
+                                    <span class="tag is-success">{{ history.get_action_type_display }}</span>
+                                {% elif history.action_type == 'user_return' %}
+                                    <span class="tag is-warning">{{ history.get_action_type_display }}</span>
+                                {% else %}
+                                    <span class="tag is-light">{{ history.get_action_type_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ history.description }}</td>
+                            <td>{{ history.signed_by }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Lịch sử gần đây -->
+<div class="card mt-5">
+    <header class="card-header">
+        <p class="card-header-title">
+            <span class="icon-text">
+                <span class="icon">
+                    <i class="fas fa-history"></i>
+                </span>
+                <span>Lịch sử gần đây</span>
+            </span>
+        </p>
+        <div class="card-header-icon">
+            <a href="{% url 'equipment:equipment_history' equipment.pk %}" class="button is-small is-primary">
+                Xem tất cả
+            </a>
+        </div>
+    </header>
+    <div class="card-content" style="padding: 0;">
+        {% if histories %}
+            <div class="table-container">
+                <table class="table is-fullwidth is-narrow">
+                    <thead>
+                        <tr>
+                            <th>Ngày</th>
+                            <th>Loại</th>
+                            <th>Nội dung</th>
+                            <th>Ký tên</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for history in histories|slice:":5" %}
+                            <tr>
+                                <td>{{ history.action_date|date:"d/m/Y" }}</td>
+                                <td><span class="tag is-light">{{ history.get_action_type_display }}</span></td>
+                                <td>{{ history.description|truncatewords:20 }}</td>
+                                <td>{{ history.signed_by }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="has-text-centered" style="padding: 2rem;">
+                <p class="has-text-grey">Chưa có lịch sử</p>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'equipment:history_add' equipment.pk %}" class="button is-primary mt-4">
+                        <span class="icon">
+                            <i class="fas fa-plus"></i>
+                        </span>
+                        <span>Thêm lịch sử</span>
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

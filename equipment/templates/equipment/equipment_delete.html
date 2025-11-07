@@ -1,0 +1,51 @@
+{% extends 'equipment/base.html' %}
+
+{% block title %}Xóa thiết bị{% endblock %}
+
+{% block content %}
+<div class="columns is-centered">
+    <div class="column is-half">
+        <div class="card">
+            <header class="card-header has-background-danger">
+                <p class="card-header-title has-text-white">
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </span>
+                        <span>Xác nhận xóa</span>
+                    </span>
+                </p>
+            </header>
+            <div class="card-content">
+                <p>Bạn có chắc chắn muốn xóa thiết bị này?</p>
+                <div class="notification is-warning is-light mt-4">
+                    <strong>{{ equipment.name }}</strong><br>
+                    Mã: {{ equipment.code }}<br>
+                    Công ty: {{ equipment.company.name }}
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="field is-grouped">
+                        <div class="control">
+                            <a href="{% url 'equipment:equipment_detail' equipment.pk %}" class="button is-light">
+                                <span class="icon">
+                                    <i class="fas fa-times"></i>
+                                </span>
+                                <span>Hủy</span>
+                            </a>
+                        </div>
+                        <div class="control">
+                            <button type="submit" class="button is-danger">
+                                <span class="icon">
+                                    <i class="fas fa-trash"></i>
+                                </span>
+                                <span>Xóa</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

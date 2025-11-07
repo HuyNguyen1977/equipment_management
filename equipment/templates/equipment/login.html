@@ -1,0 +1,73 @@
+{% extends 'equipment/base.html' %}
+
+{% block title %}Đăng nhập{% endblock %}
+
+{% block content %}
+<div class="columns is-centered">
+    <div class="column is-5">
+        <div class="card mt-5">
+            <header class="card-header has-background-primary">
+                <p class="card-header-title has-text-white">
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="fas fa-sign-in-alt"></i>
+                        </span>
+                        <span>Đăng nhập</span>
+                    </span>
+                </p>
+            </header>
+            <div class="card-content">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="notification is-danger is-light">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="field">
+                        <label class="label">Tên đăng nhập</label>
+                        <div class="control">
+                            <input type="text" name="username" class="input" required autofocus>
+                        </div>
+                        {% if form.username.errors %}
+                            <p class="help is-danger">{{ form.username.errors }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="field">
+                        <label class="label">Mật khẩu</label>
+                        <div class="control">
+                            <input type="password" name="password" class="input" required>
+                        </div>
+                        {% if form.password.errors %}
+                            <p class="help is-danger">{{ form.password.errors }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="field">
+                        <div class="control">
+                            <button type="submit" class="button is-primary is-fullwidth">
+                                <span class="icon">
+                                    <i class="fas fa-sign-in-alt"></i>
+                                </span>
+                                <span>Đăng nhập</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                
+                <div class="has-text-centered mt-4">
+                    <p class="help">
+                        <span class="icon">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+                        Vui lòng đăng nhập để thêm, sửa, xóa thiết bị
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

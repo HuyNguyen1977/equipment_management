@@ -1,0 +1,369 @@
+{% extends 'equipment/base.html' %}
+
+{% block title %}{% if history %}Sửa{% else %}Thêm{% endif %} lịch sử thiết bị{% endblock %}
+
+{% block content %}
+<div class="columns is-centered">
+    <div class="column is-two-thirds">
+        <div class="card">
+            <header class="card-header">
+                <p class="card-header-title">
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="fas fa-{% if history %}edit{% else %}plus-circle{% endif %}"></i>
+                        </span>
+                        <span>{% if history %}Sửa{% else %}Thêm{% endif %} lịch sử thiết bị</span>
+                    </span>
+                </p>
+            </header>
+            <div class="card-content">
+                <div class="notification is-info is-light mb-5">
+                    <strong>Thiết bị:</strong> {{ equipment.name }} ({{ equipment.code }})
+                </div>
+                
+                {% if action_type %}
+                    <div class="notification is-success is-light mb-5">
+                        <span class="icon">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+                        Bạn đang thêm lịch sử: 
+                        <strong>
+                            {% if action_type == 'repair' %}Sửa chữa
+                            {% elif action_type == 'movement' %}Di chuyển
+                            {% elif action_type == 'liquidation' %}Thanh lý
+                            {% elif action_type == 'maintenance' %}Bảo trì
+                            {% elif action_type == 'replacement' %}Thay thế
+                            {% elif action_type == 'upgrade' %}Nâng cấp
+                            {% else %}{{ action_type }}{% endif %}
+                        </strong>
+                    </div>
+                {% endif %}
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="field">
+                        <label class="label">Ngày <span class="has-text-danger">*</span></label>
+                        <div class="control">
+                            {{ form.action_date }}
+                        </div>
+                        {% if form.action_date.errors %}
+                            <p class="help is-danger">{{ form.action_date.errors }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="field">
+                        <label class="label">Loại hành động <span class="has-text-danger">*</span></label>
+                        <div class="control">
+                            {{ form.action_type }}
+                        </div>
+                        {% if form.action_type.errors %}
+                            <p class="help is-danger">{{ form.action_type.errors }}</p>
+                        {% endif %}
+                        {% if action_type == 'repair' %}
+                            <p class="help">Ghi lại thông tin sửa chữa thiết bị</p>
+                        {% elif action_type == 'movement' %}
+                            <p class="help">Ghi lại việc di chuyển thiết bị (từ đâu đến đâu)</p>
+                        {% elif action_type == 'liquidation' %}
+                            <p class="help">Ghi lại việc thanh lý thiết bị</p>
+                        {% elif action_type == 'maintenance' %}
+                            <p class="help">Ghi lại thông tin bảo trì thiết bị</p>
+                        {% elif action_type == 'replacement' %}
+                            <p class="help">Ghi lại việc thay thế linh kiện/phụ kiện</p>
+                        {% elif action_type == 'upgrade' %}
+                            <p class="help">Ghi lại việc nâng cấp thiết bị</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="field" id="to-user-field" style="display: none;">
+                        <label class="label">{{ form.to_user.label }}</label>
+                        <div class="field has-addons" id="to-user-container">
+                            <div class="control is-expanded" id="to-user-wrapper">
+                                {{ form.to_user }}
+                            </div>
+                            <div class="control">
+                                <button type="button" id="btn-create-user-movement" class="button is-primary" title="Tạo user mới nhanh">
+                                    <span class="icon">
+                                        <i class="fas fa-plus"></i>
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                        {% if form.to_user.errors %}
+                            <p class="help is-danger">{{ form.to_user.errors }}</p>
+                        {% endif %}
+                        {% if form.to_user.help_text %}
+                            <p class="help">{{ form.to_user.help_text }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="field">
+                        <label class="label">Nội dung chi tiết <span class="has-text-danger">*</span></label>
+                        <div class="control">
+                            {{ form.description }}
+                        </div>
+                        {% if form.description.errors %}
+                            <p class="help is-danger">{{ form.description.errors }}</p>
+                        {% endif %}
+                        <p class="help" id="description-help">Mô tả chi tiết về sửa chữa, thay thế, di chuyển, thanh lý...</p>
+                    </div>
+                    
+                    <div class="field">
+                        <label class="label">Ký tên <span class="has-text-danger">*</span></label>
+                        <div class="control">
+                            {{ form.signed_by }}
+                        </div>
+                        {% if form.signed_by.errors %}
+                            <p class="help is-danger">{{ form.signed_by.errors }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="field is-grouped">
+                        <div class="control">
+                            <a href="{% url 'equipment:equipment_history' equipment.pk %}" class="button is-light">
+                                <span class="icon">
+                                    <i class="fas fa-times"></i>
+                                </span>
+                                <span>Hủy</span>
+                            </a>
+                        </div>
+                        <div class="control">
+                            <button type="submit" class="button is-primary">
+                                <span class="icon">
+                                    <i class="fas fa-check"></i>
+                                </span>
+                                <span>Lưu</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const actionTypeSelect = document.getElementById('id_action_type');
+    const toUserField = document.getElementById('to-user-field');
+    const toUserSelect = document.getElementById('id_to_user');
+    const descriptionTextarea = document.getElementById('id_description');
+    const descriptionHelp = document.getElementById('description-help');
+    const currentUser = '{{ equipment.current_user.username|default:"" }}';
+    
+    // Toggle hiển thị trường to_user
+    function toggleToUserField() {
+        if (actionTypeSelect && toUserField) {
+            if (actionTypeSelect.value === 'movement') {
+                toUserField.style.display = 'block';
+                if (descriptionHelp) {
+                    descriptionHelp.textContent = 'Mô tả sẽ được tự động điền khi chọn người dùng. Bạn có thể chỉnh sửa nếu cần.';
+                }
+            } else {
+                toUserField.style.display = 'none';
+                if (descriptionHelp) {
+                    descriptionHelp.textContent = 'Mô tả chi tiết về sửa chữa, thay thế, di chuyển, thanh lý...';
+                }
+            }
+        }
+    }
+    
+    // Lắng nghe sự kiện change của action_type
+    if (actionTypeSelect) {
+        actionTypeSelect.addEventListener('change', toggleToUserField);
+        // Kiểm tra giá trị ban đầu
+        toggleToUserField();
+    }
+    
+    // Khởi tạo Select2 cho to_user
+    if (toUserSelect) {
+        function initSelect2() {
+            if (typeof $ === 'undefined' || typeof $.fn.select2 === 'undefined') {
+                setTimeout(initSelect2, 100);
+                return;
+            }
+            
+            const currentValue = $(toUserSelect).val();
+            const currentText = $(toUserSelect).find('option:selected').text();
+            
+            $(toUserSelect).select2({
+                width: '100%',
+                placeholder: 'Chọn hoặc tìm kiếm user...',
+                allowClear: true,
+                dropdownParent: $(toUserSelect).closest('#to-user-container'),
+                language: {
+                    noResults: function() {
+                        return 'Không tìm thấy. Click nút + để tạo mới.';
+                    },
+                    searching: function() {
+                        return 'Đang tìm kiếm...';
+                    }
+                },
+                ajax: {
+                    url: '{% url "equipment:search_users" %}',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            q: params.term,
+                            page: params.page
+                        };
+                    },
+                    processResults: function (data, params) {
+                        params.page = params.page || 1;
+                        return {
+                            results: data.users.map(function(user) {
+                                return {
+                                    id: user.id,
+                                    text: user.display
+                                };
+                            }),
+                            pagination: {
+                                more: false
+                            }
+                        };
+                    },
+                    cache: true
+                },
+                minimumInputLength: 2
+            });
+            
+            if (currentValue && currentText && currentValue !== '') {
+                if ($(toUserSelect).find('option[value="' + currentValue + '"]').length === 0) {
+                    const option = new Option(currentText, currentValue, true, true);
+                    $(toUserSelect).append(option);
+                }
+                $(toUserSelect).trigger('change');
+            }
+            
+            // Tự động điền description khi chọn user
+            $(toUserSelect).on('select2:select', function(e) {
+                const selectedUser = e.params.data;
+                if (descriptionTextarea && currentUser) {
+                    descriptionTextarea.value = `Chuyển máy từ ${currentUser} sang ${selectedUser.text}`;
+                } else if (descriptionTextarea) {
+                    descriptionTextarea.value = `Chuyển máy sang ${selectedUser.text}`;
+                }
+            });
+            
+            // Xóa description khi clear user
+            $(toUserSelect).on('select2:clear', function() {
+                if (descriptionTextarea) {
+                    descriptionTextarea.value = '';
+                }
+            });
+        }
+        
+        initSelect2();
+    }
+    
+    // Nút tạo user mới
+    const btnCreateUser = document.getElementById('btn-create-user-movement');
+    if (btnCreateUser) {
+        btnCreateUser.addEventListener('click', function(e) {
+            e.preventDefault();
+            showCreateUserModal();
+        });
+    }
+    
+    // Hàm hiển thị modal tạo user (tương tự equipment_form.html)
+    function showCreateUserModal() {
+        const modal = document.createElement('div');
+        modal.id = 'createUserModal';
+        modal.className = 'modal is-active';
+        modal.innerHTML = `
+            <div class="modal-background"></div>
+            <div class="modal-card">
+                <header class="modal-card-head">
+                    <p class="modal-card-title">Tạo user mới</p>
+                    <button class="delete" aria-label="close" onclick="this.closest('.modal').remove()"></button>
+                </header>
+                <section class="modal-card-body">
+                    <div class="field">
+                        <label class="label">Tên đăng nhập <span class="has-text-danger">*</span></label>
+                        <div class="control">
+                            <input type="text" id="new-username" class="input" placeholder="username" required>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">Họ và tên <span class="has-text-danger">*</span></label>
+                        <div class="control">
+                            <input type="text" id="new-name" class="input" placeholder="Họ và tên" required>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">Email</label>
+                        <div class="control">
+                            <input type="email" id="new-email" class="input" placeholder="email@example.com">
+                        </div>
+                    </div>
+                </section>
+                <footer class="modal-card-foot">
+                    <button class="button is-light" onclick="this.closest('.modal').remove()">Hủy</button>
+                    <button class="button is-primary" id="btn-save-user">Tạo user</button>
+                </footer>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        // Xử lý nút lưu
+        document.getElementById('btn-save-user').addEventListener('click', function() {
+            const username = document.getElementById('new-username').value.trim();
+            const name = document.getElementById('new-name').value.trim();
+            const email = document.getElementById('new-email').value.trim();
+            
+            if (!username || !name) {
+                alert('Vui lòng điền đầy đủ thông tin!');
+                return;
+            }
+            
+            const btnSave = this;
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<span class="icon"><i class="fas fa-spinner fa-spin"></i></span><span>Đang tạo...</span>';
+            
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('email', email);
+            formData.append('username', username);
+            
+            fetch('{% url "equipment:create_user_quick" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const select = document.getElementById('id_to_user');
+                    const option = document.createElement('option');
+                    option.value = data.user.id;
+                    option.textContent = data.user.display;
+                    option.selected = true;
+                    select.appendChild(option);
+                    
+                    if (typeof $ !== 'undefined' && $.fn.select2) {
+                        const newOption = new Option(data.user.display, data.user.id, true, true);
+                        $(select).append(newOption).trigger('change');
+                    }
+                    
+                    modal.remove();
+                    alert('✅ Đã tạo user mới thành công!\\n\\nUsername: ' + data.user.username + '\\nPassword: Pega@2025');
+                } else {
+                    alert('❌ Lỗi: ' + (data.error || 'Không thể tạo user'));
+                    btnSave.disabled = false;
+                    btnSave.innerHTML = '<span class="icon"><i class="fas fa-check"></i></span><span>Tạo user</span>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ Có lỗi xảy ra khi tạo user');
+                btnSave.disabled = false;
+                btnSave.innerHTML = '<span class="icon"><i class="fas fa-check"></i></span><span>Tạo user</span>';
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,261 @@
+{% extends 'equipment/base.html' %}
+
+{% block title %}Lịch sử thiết bị - {{ equipment.name }}{% endblock %}
+
+{% block content %}
+<div class="level mb-5">
+    <div class="level-left">
+        <div class="level-item">
+            <h2 class="title is-3">
+                <span class="icon-text">
+                    <span class="icon">
+                        <i class="fas fa-history"></i>
+                    </span>
+                    <span>Lịch sử thiết bị</span>
+                </span>
+            </h2>
+        </div>
+    </div>
+    <div class="level-right">
+        <div class="level-item">
+            <div class="buttons">
+                {% if user.is_authenticated %}
+                    <div class="dropdown is-hoverable">
+                        <div class="dropdown-trigger">
+                            <button class="button is-success" aria-haspopup="true" aria-controls="dropdown-menu">
+                                <span class="icon">
+                                    <i class="fas fa-plus-circle"></i>
+                                </span>
+                                <span>Thêm lịch sử</span>
+                                <span class="icon is-small">
+                                    <i class="fas fa-angle-down"></i>
+                                </span>
+                            </button>
+                        </div>
+                        <div class="dropdown-menu" id="dropdown-menu" role="menu">
+                            <div class="dropdown-content">
+                                <a href="{% url 'equipment:history_add' equipment.pk %}?action_type=repair" class="dropdown-item">
+                                    <span class="icon">
+                                        <i class="fas fa-tools"></i>
+                                    </span>
+                                    <span>Sửa chữa</span>
+                                </a>
+                                <a href="{% url 'equipment:history_add' equipment.pk %}?action_type=movement" class="dropdown-item">
+                                    <span class="icon">
+                                        <i class="fas fa-exchange-alt"></i>
+                                    </span>
+                                    <span>Di chuyển</span>
+                                </a>
+                                <a href="{% url 'equipment:history_add' equipment.pk %}?action_type=maintenance" class="dropdown-item">
+                                    <span class="icon">
+                                        <i class="fas fa-cog"></i>
+                                    </span>
+                                    <span>Bảo trì</span>
+                                </a>
+                                <a href="{% url 'equipment:history_add' equipment.pk %}?action_type=liquidation" class="dropdown-item">
+                                    <span class="icon">
+                                        <i class="fas fa-trash"></i>
+                                    </span>
+                                    <span>Thanh lý</span>
+                                </a>
+                                <hr class="dropdown-divider">
+                                <a href="{% url 'equipment:history_add' equipment.pk %}?action_type=replacement" class="dropdown-item">
+                                    <span class="icon">
+                                        <i class="fas fa-redo"></i>
+                                    </span>
+                                    <span>Thay thế</span>
+                                </a>
+                                <a href="{% url 'equipment:history_add' equipment.pk %}?action_type=upgrade" class="dropdown-item">
+                                    <span class="icon">
+                                        <i class="fas fa-arrow-up"></i>
+                                    </span>
+                                    <span>Nâng cấp</span>
+                                </a>
+                                <hr class="dropdown-divider">
+                                <a href="{% url 'equipment:history_add' equipment.pk %}" class="dropdown-item">
+                                    <span class="icon">
+                                        <i class="fas fa-ellipsis-h"></i>
+                                    </span>
+                                    <span>Khác</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                <a href="{% url 'equipment:equipment_detail' equipment.pk %}" class="button is-light">
+                    <span class="icon">
+                        <i class="fas fa-arrow-left"></i>
+                    </span>
+                    <span>Quay lại</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Thông tin thiết bị -->
+<div class="card mb-5">
+    <header class="card-header">
+        <p class="card-header-title">
+            <span class="icon-text">
+                <span class="icon">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+                <span>Thông tin thiết bị</span>
+            </span>
+        </p>
+    </header>
+    <div class="card-content">
+        <div class="columns">
+            <div class="column is-one-quarter">
+                <strong>Tên thiết bị:</strong><br>
+                {{ equipment.name }}
+            </div>
+            <div class="column is-one-quarter">
+                <strong>Ký hiệu mã:</strong><br>
+                {{ equipment.code }}
+            </div>
+            <div class="column is-one-quarter">
+                <strong>Thời điểm đưa vào sử dụng:</strong><br>
+                {% if equipment.commission_date %}
+                    {{ equipment.commission_date|date:"d/m/Y" }}
+                {% else %}
+                    <span class="has-text-grey">Chưa có</span>
+                {% endif %}
+            </div>
+            <div class="column is-one-quarter">
+                <strong>Công ty:</strong><br>
+                {{ equipment.company.name }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Thông số kỹ thuật -->
+{% if equipment.technical_specs %}
+<div class="card mb-5">
+    <header class="card-header">
+        <p class="card-header-title">
+            <span class="icon-text">
+                <span class="icon">
+                    <i class="fas fa-list-check"></i>
+                </span>
+                <span>Thông số kỹ thuật</span>
+            </span>
+        </p>
+    </header>
+    <div class="card-content">
+        <div class="columns is-multiline">
+            {% for key, value in equipment.technical_specs.items %}
+                <div class="column is-half">
+                    <strong>{{ key }}:</strong> {{ value }}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Tài liệu hướng dẫn -->
+{% if equipment.documentation %}
+<div class="card mb-5">
+    <header class="card-header">
+        <p class="card-header-title">
+            <span class="icon-text">
+                <span class="icon">
+                    <i class="fas fa-file-alt"></i>
+                </span>
+                <span>Tài liệu hướng dẫn kèm theo</span>
+            </span>
+        </p>
+    </header>
+    <div class="card-content">
+        <div class="content">{{ equipment.documentation|linebreaks }}</div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Lịch sử -->
+<div class="card">
+    <header class="card-header">
+        <p class="card-header-title">
+            <span class="icon-text">
+                <span class="icon">
+                    <i class="fas fa-history"></i>
+                </span>
+                <span>Phần theo dõi sửa chữa, thay thế, di chuyển, thanh lý</span>
+            </span>
+        </p>
+    </header>
+    <div class="card-content" style="padding: 0;">
+        {% if histories %}
+            <div class="table-container">
+                <table class="table is-fullwidth is-bordered mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 5%;">STT</th>
+                            <th style="width: 15%;">Ngày</th>
+                            <th style="width: 50%;">Nội dung chi tiết</th>
+                            <th style="width: 20%;">Ký tên</th>
+                            <th style="width: 10%;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for history in histories %}
+                            <tr>
+                                <td class="has-text-centered">{{ forloop.counter }}</td>
+                                <td>{{ history.action_date|date:"d/m/Y" }}</td>
+                                <td>
+                                    <strong>[{{ history.get_action_type_display }}]</strong><br>
+                                    <div class="content is-small">{{ history.description|linebreaks }}</div>
+                                </td>
+                                <td>{{ history.signed_by }}</td>
+                                <td>
+                                    {% if user.is_authenticated %}
+                                        <div class="buttons">
+                                            <a href="{% url 'equipment:history_edit' history.pk %}" class="button is-small is-outlined is-warning" title="Sửa">
+                                                <span class="icon">
+                                                    <i class="fas fa-edit"></i>
+                                                </span>
+                                            </a>
+                                            <a href="{% url 'equipment:history_delete' history.pk %}" class="button is-small is-outlined is-danger" title="Xóa">
+                                                <span class="icon">
+                                                    <i class="fas fa-trash"></i>
+                                                </span>
+                                            </a>
+                                        </div>
+                                    {% else %}
+                                        <span class="has-text-grey">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="has-text-centered" style="padding: 3rem;">
+                <span class="icon is-large has-text-grey-light">
+                    <i class="fas fa-inbox fa-3x"></i>
+                </span>
+                <p class="has-text-grey mt-4">Chưa có lịch sử</p>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'equipment:history_add' equipment.pk %}" class="button is-primary mt-4">
+                        <span class="icon">
+                            <i class="fas fa-plus-circle"></i>
+                        </span>
+                        <span>Thêm lịch sử đầu tiên</span>
+                    </a>
+                {% else %}
+                    <a href="{% url 'equipment:login' %}" class="button is-primary mt-4">
+                        <span class="icon">
+                            <i class="fas fa-sign-in-alt"></i>
+                        </span>
+                        <span>Đăng nhập để thêm lịch sử</span>
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

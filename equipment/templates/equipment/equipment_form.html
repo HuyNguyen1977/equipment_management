@@ -1,0 +1,673 @@
+{% extends 'equipment/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="columns is-centered">
+    <div class="column is-10">
+        <div class="card">
+            <header class="card-header">
+                <p class="card-header-title">
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="fas fa-plus-circle"></i>
+                        </span>
+                        <span>{{ title }}</span>
+                    </span>
+                </p>
+            </header>
+            <div class="card-content">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="mb-5">
+                        <h3 class="title is-5 has-border-bottom pb-3 mb-4">Thông tin cơ bản</h3>
+                        <div class="columns">
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">Công ty <span class="has-text-danger">*</span></label>
+                                    <div class="control">
+                                        {{ form.company }}
+                                    </div>
+                                    {% if form.company.errors %}
+                                        <p class="help is-danger">{{ form.company.errors }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">Miền <span class="has-text-danger">*</span></label>
+                                    <div class="control">
+                                        {{ form.region }}
+                                    </div>
+                                    {% if form.region.errors %}
+                                        <p class="help is-danger">{{ form.region.errors }}</p>
+                                    {% endif %}
+                                    <p class="help">Chọn miền để tự động tạo mã thiết bị</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="columns">
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">Loại thiết bị <span class="has-text-danger">*</span></label>
+                                    <div class="control">
+                                        {{ form.equipment_type }}
+                                    </div>
+                                    {% if form.equipment_type.errors %}
+                                        <p class="help is-danger">{{ form.equipment_type.errors }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">Tên thiết bị <span class="has-text-danger">*</span></label>
+                                    <div class="control">
+                                        {{ form.name }}
+                                    </div>
+                                    {% if form.name.errors %}
+                                        <p class="help is-danger">{{ form.name.errors }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="columns">
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">Ký hiệu mã</label>
+                                    <div class="control">
+                                        {{ form.code }}
+                                    </div>
+                                    {% if form.code.errors %}
+                                        <p class="help is-danger">{{ form.code.errors }}</p>
+                                    {% endif %}
+                                    {% if form.code.help_text %}
+                                        <p class="help">{{ form.code.help_text }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="columns">
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">Thời điểm đưa vào sử dụng</label>
+                                    <div class="control">
+                                        {{ form.commission_date }}
+                                    </div>
+                                    {% if form.commission_date.errors %}
+                                        <p class="help is-danger">{{ form.commission_date.errors }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">Người đang sử dụng</label>
+                                    <div class="field has-addons" id="current-user-container">
+                                        <div class="control is-expanded" id="current-user-wrapper">
+                                            {{ form.current_user }}
+                                        </div>
+                                        <div class="control">
+                                            <button type="button" id="btn-create-user" class="button is-primary" title="Tạo user mới nhanh">
+                                                <span class="icon">
+                                                    <i class="fas fa-plus"></i>
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {% if form.current_user.errors %}
+                                        <p class="help is-danger">{{ form.current_user.errors }}</p>
+                                    {% endif %}
+                                    <p class="help">Chọn người đang sử dụng thiết bị này. Click nút <strong>+</strong> để tạo user mới.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="columns">
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">Trạng thái</label>
+                                    <div class="control">
+                                        <label class="checkbox">
+                                            {{ form.is_active }}
+                                            Đang hoạt động
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload DxDiag cho Laptop/Desktop -->
+                    <div id="dxdiag-section" class="mb-5" style="display: none;">
+                        <h3 class="title is-5 has-border-bottom pb-3 mb-4">Thông tin từ DxDiag (Laptop/Desktop)</h3>
+                        <div class="notification is-info is-light">
+                            <span class="icon">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                            Upload file DxDiag.txt để tự động điền thông tin hệ thống
+                        </div>
+                        <div class="field">
+                            <label class="label">Upload file DxDiag.txt</label>
+                            <div class="control">
+                                <input type="file" name="dxdiag_file_upload" class="input" accept=".txt">
+                            </div>
+                            {% if equipment.dxdiag_file %}
+                                <p class="help">File hiện tại: <a href="{{ equipment.dxdiag_file.url }}" target="_blank">{{ equipment.dxdiag_file.name }}</a></p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Thông tin kỹ thuật từ DxDiag -->
+                    <div id="tech-info-section" class="mb-5" style="display: none;">
+                        <h3 class="title is-5 has-border-bottom pb-3 mb-4">Thông tin kỹ thuật</h3>
+                        <div class="columns">
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">Tên máy</label>
+                                    <div class="control">
+                                        {{ form.machine_name }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">Hệ điều hành</label>
+                                    <div class="control">
+                                        {{ form.operating_system }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="columns">
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">Nhà sản xuất</label>
+                                    <div class="control">
+                                        {{ form.system_manufacturer }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">Model</label>
+                                    <div class="control">
+                                        {{ form.system_model }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="columns">
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">Bộ xử lý</label>
+                                    <div class="control">
+                                        {{ form.processor }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">Bộ nhớ</label>
+                                    <div class="control">
+                                        {{ form.memory }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="columns">
+                            <div class="column">
+                                <div class="field">
+                                    <label class="label">Card đồ họa</label>
+                                    <div class="control">
+                                        {{ form.graphics_card }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="columns">
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">Monitor Name</label>
+                                    <div class="control">
+                                        {{ form.monitor_name }}
+                                    </div>
+                                    {% if form.monitor_name.errors %}
+                                        <p class="help is-danger">{{ form.monitor_name.errors }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">Monitor Model</label>
+                                    <div class="control">
+                                        {{ form.monitor_model }}
+                                    </div>
+                                    {% if form.monitor_model.errors %}
+                                        <p class="help is-danger">{{ form.monitor_model.errors }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Thông số kỹ thuật -->
+                    <div class="mb-5">
+                        <h3 class="title is-5 has-border-bottom pb-3 mb-4">Thông số kỹ thuật</h3>
+                        <div class="field">
+                            <label class="label">{{ form.technical_specs_text.label }}</label>
+                            <div class="control">
+                                {{ form.technical_specs_text }}
+                            </div>
+                            <p class="help">{{ form.technical_specs_text.help_text }}</p>
+                            {% if form.technical_specs_text.errors %}
+                                <p class="help is-danger">{{ form.technical_specs_text.errors }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Tài liệu hướng dẫn -->
+                    <div class="mb-5">
+                        <h3 class="title is-5 has-border-bottom pb-3 mb-4">Tài liệu hướng dẫn kèm theo</h3>
+                        <div class="field">
+                            <div class="control">
+                                {{ form.documentation }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field is-grouped">
+                        <div class="control">
+                            <a href="{% if equipment %}{% url 'equipment:equipment_detail' equipment.pk %}{% else %}{% url 'equipment:index' %}{% endif %}" class="button is-light">
+                                <span class="icon">
+                                    <i class="fas fa-times"></i>
+                                </span>
+                                <span>Hủy</span>
+                            </a>
+                        </div>
+                        <div class="control">
+                            <button type="submit" class="button is-primary">
+                                <span class="icon">
+                                    <i class="fas fa-check"></i>
+                                </span>
+                                <span>Lưu</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .has-border-bottom {
+        border-bottom: 2px solid #e5e7eb;
+    }
+    #current-user-wrapper select,
+    #current-user-wrapper .select2-container {
+        width: 100% !important;
+    }
+    .select2-container--default .select2-selection--single {
+        height: 2.5em;
+        border: 1px solid #dbdbdb;
+        border-radius: 4px;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 2.5em;
+        padding-left: 0.75em;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 2.5em;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== EQUIPMENT FORM SCRIPT LOADED ===');
+    
+    // Tự động tạo code khi chọn region
+    const regionSelect = document.getElementById('id_region');
+    const codeInput = document.getElementById('id_code');
+    
+    if (regionSelect && codeInput) {
+        // Kiểm tra xem có phải edit mode không (có code cũ)
+        const isEditMode = codeInput.value && codeInput.value.trim() !== '';
+        let initialRegion = regionSelect.value; // Lưu region ban đầu
+        
+        // Hàm để lấy code tiếp theo
+        function updateCodeFromRegion() {
+            const region = regionSelect.value;
+            console.log('Region selected:', region);
+            
+            if (region) {
+                // Nếu là edit mode và region không thay đổi, không cập nhật code
+                if (isEditMode && region === initialRegion) {
+                    console.log('Edit mode - region unchanged, keeping original code');
+                    return;
+                }
+                
+                // Nếu là edit mode và region thay đổi, xác nhận với user
+                if (isEditMode && region !== initialRegion) {
+                    const confirmMessage = 'Bạn đang thay đổi miền. Mã thiết bị sẽ được tự động tạo lại cho miền mới. Bạn có muốn tiếp tục?';
+                    if (!confirm(confirmMessage)) {
+                        // Khôi phục region cũ
+                        regionSelect.value = initialRegion;
+                        return;
+                    }
+                }
+                
+                // Hiển thị loading
+                codeInput.value = 'Đang tạo...';
+                codeInput.disabled = true;
+                
+                // Gọi API để lấy code tiếp theo
+                const url = '{% url "equipment:get_next_code" %}?region=' + encodeURIComponent(region);
+                console.log('Fetching code from:', url);
+                
+                fetch(url, {
+                    method: 'GET',
+                    credentials: 'same-origin'
+                })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Response data:', data);
+                    if (data.success && data.code) {
+                        codeInput.value = data.code;
+                        console.log('Code updated to:', data.code);
+                        // Cập nhật initialRegion sau khi đã xác nhận
+                        if (isEditMode) {
+                            initialRegion = region;
+                        }
+                    } else {
+                        console.error('API returned error:', data.error);
+                        if (!isEditMode) {
+                            codeInput.value = '';
+                        }
+                    }
+                    codeInput.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error getting next code:', error);
+                    if (!isEditMode) {
+                        codeInput.value = '';
+                    }
+                    codeInput.disabled = false;
+                });
+            } else {
+                if (!isEditMode) {
+                    codeInput.value = '';
+                }
+            }
+        }
+        
+        // Lắng nghe sự kiện change
+        regionSelect.addEventListener('change', updateCodeFromRegion);
+        
+        // Tự động tạo code khi load nếu đã chọn region (chỉ cho create mode)
+        if (regionSelect.value && !isEditMode) {
+            console.log('Initial region value:', regionSelect.value);
+            updateCodeFromRegion();
+        } else if (isEditMode) {
+            console.log('Edit mode - code will be updated if region changes');
+        }
+    } else {
+        console.error('Region select or code input not found!');
+        if (!regionSelect) console.error('id_region not found');
+        if (!codeInput) console.error('id_code not found');
+    }
+    
+    // Kiểm tra nút +
+    const btnCheck = document.getElementById('btn-create-user');
+    if (btnCheck) {
+        console.log('✓ Nút btn-create-user TÌM THẤY');
+    } else {
+        console.error('✗ Nút btn-create-user KHÔNG TÌM THẤY');
+    }
+    
+    // Kiểm tra container
+    const containerCheck = document.getElementById('current-user-container');
+    if (containerCheck) {
+        console.log('✓ Container current-user-container TÌM THẤY');
+    } else {
+        console.error('✗ Container current-user-container KHÔNG TÌM THẤY');
+    }
+    
+    // Toggle sections
+    const equipmentType = document.getElementById('id_equipment_type');
+    const dxdiagSection = document.getElementById('dxdiag-section');
+    const techInfoSection = document.getElementById('tech-info-section');
+    
+    function toggleSections() {
+        if (!equipmentType) return;
+        const type = equipmentType.value;
+        if (type === 'laptop' || type === 'desktop') {
+            if (dxdiagSection) dxdiagSection.style.display = 'block';
+            if (techInfoSection) techInfoSection.style.display = 'block';
+        } else {
+            if (dxdiagSection) dxdiagSection.style.display = 'none';
+            if (techInfoSection) techInfoSection.style.display = 'none';
+        }
+    }
+    
+    if (equipmentType) {
+        equipmentType.addEventListener('change', toggleSections);
+        toggleSections();
+    }
+
+    // Select2 cho current_user
+    const currentUserSelect = document.getElementById('id_current_user');
+    if (currentUserSelect) {
+        function initSelect2() {
+            if (typeof $ === 'undefined' || typeof $.fn.select2 === 'undefined') {
+                setTimeout(initSelect2, 100);
+                return;
+            }
+            
+            const currentValue = $(currentUserSelect).val();
+            const currentText = $(currentUserSelect).find('option:selected').text();
+            
+            $(currentUserSelect).select2({
+                width: '100%',
+                placeholder: 'Chọn hoặc tìm kiếm user...',
+                allowClear: true,
+                dropdownParent: $(currentUserSelect).closest('#current-user-container'),
+                language: {
+                    noResults: function() {
+                        return 'Không tìm thấy. Click nút + để tạo mới.';
+                    },
+                    searching: function() {
+                        return 'Đang tìm kiếm...';
+                    }
+                },
+                ajax: {
+                    url: '{% url "equipment:search_users" %}',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            q: params.term,
+                            page: params.page
+                        };
+                    },
+                    processResults: function (data, params) {
+                        params.page = params.page || 1;
+                        return {
+                            results: data.users.map(function(user) {
+                                return {
+                                    id: user.id,
+                                    text: user.display
+                                };
+                            }),
+                            pagination: {
+                                more: false
+                            }
+                        };
+                    },
+                    cache: true
+                },
+                minimumInputLength: 2
+            });
+            
+            if (currentValue && currentText && currentValue !== '') {
+                if ($(currentUserSelect).find('option[value="' + currentValue + '"]').length === 0) {
+                    const option = new Option(currentText, currentValue, true, true);
+                    $(currentUserSelect).append(option);
+                }
+                $(currentUserSelect).trigger('change');
+            }
+        }
+        
+        initSelect2();
+    }
+
+    // Button tạo user
+    const btnCreateUser = document.getElementById('btn-create-user');
+    if (btnCreateUser) {
+        console.log('✓ Đăng ký event cho nút btn-create-user');
+        btnCreateUser.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('✓ Click vào nút tạo user');
+            showCreateUserModal();
+        });
+    } else {
+        console.error('✗ KHÔNG TÌM THẤY nút btn-create-user');
+    }
+
+    function showCreateUserModal() {
+        const modalHtml = `
+            <div class="modal is-active" id="createUserModal">
+                <div class="modal-background" onclick="document.getElementById('createUserModal').remove()"></div>
+                <div class="modal-card">
+                    <header class="modal-card-head">
+                        <p class="modal-card-title">
+                            <span class="icon-text">
+                                <span class="icon">
+                                    <i class="fas fa-user-plus"></i>
+                                </span>
+                                <span>Tạo user mới nhanh</span>
+                            </span>
+                        </p>
+                        <button class="delete" aria-label="close" onclick="document.getElementById('createUserModal').remove()"></button>
+                    </header>
+                    <section class="modal-card-body">
+                        <div class="field">
+                            <label class="label">Tên đầy đủ <span class="has-text-danger">*</span></label>
+                            <div class="control">
+                                <input type="text" class="input" id="new_user_name" placeholder="Ví dụ: Nguyễn Văn A" required autofocus>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label class="label">Tên đăng nhập</label>
+                            <div class="control">
+                                <input type="text" class="input" id="new_user_username" placeholder="Ví dụ: nguyenvana (để trống sẽ tự tạo)" pattern="[a-zA-Z0-9_]+" title="Chỉ cho phép chữ cái, số và dấu gạch dưới">
+                            </div>
+                            <p class="help">Chỉ cho phép chữ cái, số và dấu gạch dưới (_). Để trống sẽ tự động tạo từ tên.</p>
+                        </div>
+                        <div class="field">
+                            <label class="label">Email <span class="has-text-danger">*</span></label>
+                            <div class="control">
+                                <input type="email" class="input" id="new_user_email" placeholder="email@example.com" required>
+                            </div>
+                        </div>
+                        <div class="notification is-info is-light">
+                            <span class="icon">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                            <strong>Password mặc định:</strong> <code>Pega@2025</code>
+                            <br><small>Người dùng nên đổi password sau khi đăng nhập lần đầu.</small>
+                        </div>
+                    </section>
+                    <footer class="modal-card-foot">
+                        <button class="button" onclick="document.getElementById('createUserModal').remove()">Hủy</button>
+                        <button class="button is-primary" id="btn-save-user">
+                            <span class="icon">
+                                <i class="fas fa-check"></i>
+                            </span>
+                            <span>Tạo user</span>
+                        </button>
+                    </footer>
+                </div>
+            </div>
+        `;
+        
+        const oldModal = document.getElementById('createUserModal');
+        if (oldModal) {
+            oldModal.remove();
+        }
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        document.getElementById('btn-save-user').addEventListener('click', function() {
+            const name = document.getElementById('new_user_name').value.trim();
+            const username = document.getElementById('new_user_username').value.trim();
+            const email = document.getElementById('new_user_email').value.trim();
+            
+            if (!name || !email) {
+                alert('Vui lòng nhập đầy đủ Tên và Email');
+                return;
+            }
+            
+            // Validate username nếu có nhập
+            if (username) {
+                const usernamePattern = /^[a-zA-Z0-9_]+$/;
+                if (!usernamePattern.test(username)) {
+                    alert('Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới (_)');
+                    return;
+                }
+            }
+            
+            const btnSave = this;
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<span class="icon"><i class="fas fa-spinner fa-spin"></i></span><span>Đang tạo...</span>';
+            
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('email', email);
+            if (username) {
+                formData.append('username', username);
+            }
+            
+            fetch('{% url "equipment:create_user_quick" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const select = document.getElementById('id_current_user');
+                    const option = document.createElement('option');
+                    option.value = data.user.id;
+                    option.textContent = data.user.display;
+                    option.selected = true;
+                    select.appendChild(option);
+                    
+                    if (typeof $ !== 'undefined' && $.fn.select2) {
+                        const newOption = new Option(data.user.display, data.user.id, true, true);
+                        $(select).append(newOption).trigger('change');
+                    }
+                    
+                    document.getElementById('createUserModal').remove();
+                    alert('✅ Đã tạo user mới thành công!\n\nUsername: ' + data.user.username + '\nPassword: Pega@2025');
+                } else {
+                    alert('❌ Lỗi: ' + (data.error || 'Không thể tạo user'));
+                    btnSave.disabled = false;
+                    btnSave.innerHTML = '<span class="icon"><i class="fas fa-check"></i></span><span>Tạo user</span>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ Có lỗi xảy ra khi tạo user. Vui lòng thử lại.');
+                btnSave.disabled = false;
+                btnSave.innerHTML = '<span class="icon"><i class="fas fa-check"></i></span><span>Tạo user</span>';
+            });
+        });
+    }
+});
+</script>
+{% endblock %}
