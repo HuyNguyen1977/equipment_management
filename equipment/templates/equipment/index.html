@@ -90,7 +90,7 @@
                 <span class="icon">
                     <i class="fas fa-desktop"></i>
                 </span>
-                <span>Thiết bị ({{ equipment_list.count }})</span>
+                <span>Thiết bị ({{ page_obj.paginator.count }})</span>
             </span>
         </p>
         <div class="card-header-icon">
@@ -190,6 +190,33 @@
                     </tbody>
                 </table>
             </div>
+            
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <div class="card-footer">
+                <div class="card-footer-item">
+                    <nav class="pagination is-centered" role="navigation" aria-label="pagination">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_company %}&company={{ selected_company }}{% endif %}{% if selected_type %}&equipment_type={{ selected_type }}{% endif %}" class="pagination-previous">Trước</a>
+                        {% else %}
+                            <a class="pagination-previous" disabled>Trước</a>
+                        {% endif %}
+                        
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_company %}&company={{ selected_company }}{% endif %}{% if selected_type %}&equipment_type={{ selected_type }}{% endif %}" class="pagination-next">Sau</a>
+                        {% else %}
+                            <a class="pagination-next" disabled>Sau</a>
+                        {% endif %}
+                        
+                        <ul class="pagination-list">
+                            <li>
+                                <span class="pagination-ellipsis">Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            {% endif %}
         {% else %}
             <div class="has-text-centered" style="padding: 3rem;">
                 <span class="icon is-large has-text-grey-light">

@@ -29,6 +29,10 @@ class Equipment(models.Model):
         ('switch', 'Switch'),
         ('printer', 'Máy in'),
         ('scanner', 'Máy quét'),
+        ('server', 'Server'),
+        ('storage', 'Bộ lưu trữ'),
+        ('hardware', 'Phần cứng'),
+        ('chamcong', 'Chấm công'),
         ('other', 'Khác'),
     ]
     
@@ -52,6 +56,7 @@ class Equipment(models.Model):
     system_model = models.CharField(max_length=200, blank=True, verbose_name="Model")
     processor = models.CharField(max_length=200, blank=True, verbose_name="Bộ xử lý")
     memory = models.CharField(max_length=100, blank=True, verbose_name="Bộ nhớ")
+    storage = models.CharField(max_length=200, blank=True, verbose_name="HDD/SSD", help_text="Ví dụ: SSD 256GB, HDD 1TB")
     graphics_card = models.CharField(max_length=200, blank=True, verbose_name="Card đồ họa")
     monitor_name = models.CharField(max_length=200, blank=True, verbose_name="Monitor Name")
     monitor_model = models.CharField(max_length=200, blank=True, verbose_name="Monitor Model")

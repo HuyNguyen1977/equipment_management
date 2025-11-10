@@ -1,0 +1,289 @@
+{% extends 'tickets/base.html' %}
+
+{% block page_title %}Danh sách Ticket{% endblock %}
+
+{% block content %}
+<div class="mb-5">
+    <div class="level">
+        <div class="level-left">
+            <div>
+                <h1 class="title is-3">
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="fas fa-ticket-alt"></i>
+                        </span>
+                        <span>Danh sách Ticket</span>
+                    </span>
+                </h1>
+                <p class="subtitle">Quản lý yêu cầu hỗ trợ IT</p>
+            </div>
+        </div>
+        <div class="level-right">
+            <a href="{% url 'tickets:ticket_create' %}" class="button is-success is-large">
+                <span class="icon">
+                    <i class="fas fa-plus-circle"></i>
+                </span>
+                <span>Tạo ticket mới</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Thống kê -->
+<div class="columns mb-5">
+    <div class="column">
+        <div class="card has-background-info-light">
+            <div class="card-content">
+                <p class="heading">Tổng số</p>
+                <p class="title is-3">{{ stats.total }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="column">
+        <div class="card has-background-warning-light">
+            <div class="card-content">
+                <p class="heading">Mới tạo</p>
+                <p class="title is-3">{{ stats.new }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="column">
+        <div class="card has-background-primary-light">
+            <div class="card-content">
+                <p class="heading">Đang xử lý</p>
+                <p class="title is-3">{{ stats.in_progress }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="column">
+        <div class="card has-background-success-light">
+            <div class="card-content">
+                <p class="heading">Đã xử lý</p>
+                <p class="title is-3">{{ stats.resolved }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="column">
+        <div class="card has-background-grey-light">
+            <div class="card-content">
+                <p class="heading">Đã đóng</p>
+                <p class="title is-3">{{ stats.closed }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-5">
+    <div class="card-content">
+        <form method="get">
+            <div class="columns">
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Tìm kiếm</label>
+                        <div class="control">
+                            <input type="text" name="search" class="input" placeholder="Số ticket, tiêu đề, email..." value="{% if search_query %}{{ search_query }}{% endif %}">
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-narrow">
+                    <div class="field">
+                        <label class="label">Trạng thái</label>
+                        <div class="control">
+                            <div class="select">
+                                <select name="status">
+                                    <option value="">Tất cả</option>
+                                    <option value="new" {% if selected_status == "new" %}selected{% endif %}>Mới tạo</option>
+                                    <option value="assigned" {% if selected_status == "assigned" %}selected{% endif %}>Đã phân công</option>
+                                    <option value="in_progress" {% if selected_status == "in_progress" %}selected{% endif %}>Đang xử lý</option>
+                                    <option value="resolved" {% if selected_status == "resolved" %}selected{% endif %}>Đã xử lý</option>
+                                    <option value="closed" {% if selected_status == "closed" %}selected{% endif %}>Đã đóng</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-narrow">
+                    <div class="field">
+                        <label class="label">Ưu tiên</label>
+                        <div class="control">
+                            <div class="select">
+                                <select name="priority">
+                                    <option value="">Tất cả</option>
+                                    <option value="critical" {% if selected_priority == "critical" %}selected{% endif %}>Khẩn cấp</option>
+                                    <option value="high" {% if selected_priority == "high" %}selected{% endif %}>Cao</option>
+                                    <option value="medium" {% if selected_priority == "medium" %}selected{% endif %}>Trung bình</option>
+                                    <option value="low" {% if selected_priority == "low" %}selected{% endif %}>Thấp</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% if user.is_staff %}
+                <div class="column is-narrow">
+                    <div class="field">
+                        <label class="label">Công ty</label>
+                        <div class="control">
+                            <div class="select">
+                                <select name="company">
+                                    <option value="">Tất cả</option>
+                                    {% for company in companies %}
+                                        <option value="{{ company.id }}" {% if selected_company == company.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ company.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="column is-narrow">
+                    <div class="field">
+                        <label class="label">&nbsp;</label>
+                        <div class="control">
+                            <button type="submit" class="button is-primary">
+                                <span class="icon">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <span>Tìm</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Ticket List -->
+<div class="card">
+    <header class="card-header">
+        <p class="card-header-title">
+            <span class="icon-text">
+                <span class="icon">
+                    <i class="fas fa-list"></i>
+                </span>
+                <span>Danh sách Ticket ({{ page_obj.paginator.count }})</span>
+            </span>
+        </p>
+    </header>
+    <div class="card-content" style="padding: 0;">
+        {% if tickets %}
+            <div class="table-container">
+                <table class="table is-fullwidth is-hoverable mb-0">
+                    <thead>
+                        <tr>
+                            <th>Số ticket</th>
+                            <th>Tiêu đề</th>
+                            <th>Người yêu cầu</th>
+                            <th>Công ty</th>
+                            <th>Loại</th>
+                            <th>Ưu tiên</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày tạo</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ticket in tickets %}
+                            <tr>
+                                <td><strong>{{ ticket.ticket_number }}</strong></td>
+                                <td>
+                                    <a href="{% url 'tickets:ticket_detail' ticket.ticket_number %}">
+                                        {{ ticket.title|truncatewords:10 }}
+                                    </a>
+                                </td>
+                                <td>{{ ticket.requester_name }}</td>
+                                <td>{{ ticket.company.name }}</td>
+                                <td>
+                                    {% if ticket.category %}
+                                        <span class="tag is-light">{{ ticket.category.name }}</span>
+                                    {% else %}
+                                        <span class="has-text-grey">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if ticket.priority == 'critical' %}
+                                        <span class="tag is-danger">🔹 Khẩn cấp</span>
+                                    {% elif ticket.priority == 'high' %}
+                                        <span class="tag is-warning">🔸 Cao</span>
+                                    {% elif ticket.priority == 'medium' %}
+                                        <span class="tag is-info">🟡 Trung bình</span>
+                                    {% else %}
+                                        <span class="tag is-light">⚪ Thấp</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if ticket.status == 'new' %}
+                                        <span class="tag is-warning">Mới</span>
+                                    {% elif ticket.status == 'assigned' %}
+                                        <span class="tag is-info">Đã phân công</span>
+                                    {% elif ticket.status == 'in_progress' %}
+                                        <span class="tag is-primary">Đang xử lý</span>
+                                    {% elif ticket.status == 'resolved' %}
+                                        <span class="tag is-success">Đã xử lý</span>
+                                    {% elif ticket.status == 'closed' %}
+                                        <span class="tag is-dark">Đã đóng</span>
+                                    {% else %}
+                                        <span class="tag is-light">Đã hủy</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ ticket.created_at|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    <a href="{% url 'tickets:ticket_detail' ticket.ticket_number %}" class="button is-small is-outlined is-primary" title="Xem chi tiết">
+                                        <span class="icon">
+                                            <i class="fas fa-eye"></i>
+                                        </span>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <div class="card-footer">
+                <div class="card-footer-item">
+                    <nav class="pagination is-centered" role="navigation" aria-label="pagination">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}" class="pagination-previous">Trước</a>
+                        {% else %}
+                            <a class="pagination-previous" disabled>Trước</a>
+                        {% endif %}
+                        
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}" class="pagination-next">Sau</a>
+                        {% else %}
+                            <a class="pagination-next" disabled>Sau</a>
+                        {% endif %}
+                        
+                        <ul class="pagination-list">
+                            <li>
+                                <span class="pagination-ellipsis">Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="has-text-centered" style="padding: 3rem;">
+                <span class="icon is-large has-text-grey-light">
+                    <i class="fas fa-inbox fa-3x"></i>
+                </span>
+                <p class="has-text-grey mt-4">Không có ticket nào</p>
+                <a href="{% url 'tickets:ticket_create' %}" class="button is-primary mt-4">
+                    <span class="icon">
+                        <i class="fas fa-plus-circle"></i>
+                    </span>
+                    <span>Tạo ticket đầu tiên</span>
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

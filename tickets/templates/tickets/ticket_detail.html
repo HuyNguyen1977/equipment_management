@@ -1,0 +1,600 @@
+{% extends 'tickets/base.html' %}
+
+{% block page_title %}Chi tiết Ticket {{ ticket.ticket_number }}{% endblock %}
+
+{% block content %}
+<div class="mb-5">
+    <div class="level">
+        <div class="level-left">
+            <div>
+                <h1 class="title is-3">
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="fas fa-ticket-alt"></i>
+                        </span>
+                        <span>Ticket {{ ticket.ticket_number }}</span>
+                    </span>
+                </h1>
+                <p class="subtitle">{{ ticket.title }}</p>
+            </div>
+        </div>
+        <div class="level-right">
+            <a href="{% url 'tickets:ticket_list' %}" class="button is-light">
+                <span class="icon">
+                    <i class="fas fa-arrow-left"></i>
+                </span>
+                <span>Quay lại</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="columns">
+    <!-- Thông tin chính -->
+    <div class="column is-two-thirds">
+        <!-- Thông tin ticket -->
+        <div class="card mb-5">
+            <header class="card-header">
+                <p class="card-header-title">
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+                        <span>Thông tin ticket</span>
+                    </span>
+                </p>
+            </header>
+            <div class="card-content">
+                <div class="content">
+                    <p><strong>Tiêu đề:</strong> {{ ticket.title }}</p>
+                    <p><strong>Mô tả:</strong></p>
+                    <div class="box">
+                        {{ ticket.description|linebreaks }}
+                    </div>
+                    
+                    {% if ticket.resolution %}
+                    <p><strong>Kết quả xử lý:</strong></p>
+                    <div class="box has-background-success-light">
+                        {{ ticket.resolution|linebreaks }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Bình luận -->
+        <div class="card mb-5">
+            <header class="card-header">
+                <p class="card-header-title">
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="fas fa-comments"></i>
+                        </span>
+                        <span>Bình luận ({{ comments.count }})</span>
+                    </span>
+                </p>
+            </header>
+            <div class="card-content">
+                <!-- Form thêm bình luận -->
+                <form method="post" action="{% url 'tickets:ticket_comment' ticket.ticket_number %}">
+                    {% csrf_token %}
+                    <div class="field">
+                        <div class="control">
+                            {{ comment_form.content }}
+                        </div>
+                        {% if comment_form.content.errors %}
+                            <p class="help is-danger">{{ comment_form.content.errors }}</p>
+                        {% endif %}
+                    </div>
+                    {% if user.is_staff %}
+                    <div class="field">
+                        <div class="control">
+                            <label class="checkbox">
+                                {{ comment_form.is_internal }}
+                                Ghi chú nội bộ (chỉ IT mới thấy)
+                            </label>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="field">
+                        <div class="control">
+                            <button type="submit" class="button is-primary">
+                                <span class="icon">
+                                    <i class="fas fa-comment"></i>
+                                </span>
+                                <span>Thêm bình luận</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <hr>
+
+                <!-- Danh sách bình luận -->
+                <div class="content">
+                    {% for comment in comments %}
+                        <article class="media">
+                            <figure class="media-left">
+                                <p class="image is-64x64">
+                                    <span class="icon is-large has-background-primary has-text-white">
+                                        <i class="fas fa-user fa-2x"></i>
+                                    </span>
+                                </p>
+                            </figure>
+                            <div class="media-content">
+                                <div class="content">
+                                    <p>
+                                        <strong>{{ comment.author.get_full_name|default:comment.author.username }}</strong>
+                                        {% if comment.is_internal %}
+                                            <span class="tag is-warning is-small">Nội bộ</span>
+                                        {% endif %}
+                                        <small>{{ comment.created_at|date:"d/m/Y H:i" }}</small>
+                                    </p>
+                                    <p>{{ comment.content|linebreaks }}</p>
+                                </div>
+                            </div>
+                        </article>
+                        {% if not forloop.last %}<hr>{% endif %}
+                    {% empty %}
+                        <p class="has-text-grey">Chưa có bình luận nào</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- File đính kèm -->
+        {% if attachments %}
+        <div class="card">
+            <header class="card-header">
+                <p class="card-header-title">
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="fas fa-paperclip"></i>
+                        </span>
+                        <span>File đính kèm ({{ attachments.count }})</span>
+                    </span>
+                </p>
+            </header>
+            <div class="card-content">
+                <div class="content">
+                    {% for attachment in attachments %}
+                        <div class="box">
+                            <div class="level">
+                                <div class="level-left">
+                                    <div>
+                                        <p class="has-text-weight-bold">
+                                            <span class="icon">
+                                                <i class="fas fa-file"></i>
+                                            </span>
+                                            {{ attachment.filename }}
+                                        </p>
+                                        <p class="is-size-7 has-text-grey">
+                                            Upload bởi {{ attachment.uploaded_by.get_full_name|default:attachment.uploaded_by.username }} 
+                                            vào {{ attachment.created_at|date:"d/m/Y H:i" }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="level-right">
+                                    <a href="{{ attachment.file.url }}" target="_blank" class="button is-small is-primary">
+                                        <span class="icon">
+                                            <i class="fas fa-download"></i>
+                                        </span>
+                                        <span>Tải xuống</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="column">
+        <!-- Thông tin chi tiết -->
+        <div class="card mb-5">
+            <header class="card-header">
+                <p class="card-header-title">Thông tin chi tiết</p>
+            </header>
+            <div class="card-content">
+                <div class="content">
+                    <p><strong>Trạng thái:</strong></p>
+                    <p>
+                        {% if ticket.status == 'new' %}
+                            <span class="tag is-warning is-medium">Mới tạo</span>
+                        {% elif ticket.status == 'assigned' %}
+                            <span class="tag is-info is-medium">Đã phân công</span>
+                        {% elif ticket.status == 'in_progress' %}
+                            <span class="tag is-primary is-medium">Đang xử lý</span>
+                        {% elif ticket.status == 'resolved' %}
+                            <span class="tag is-success is-medium">Đã xử lý</span>
+                        {% elif ticket.status == 'closed' %}
+                            <span class="tag is-dark is-medium">Đã đóng</span>
+                        {% else %}
+                            <span class="tag is-light is-medium">Đã hủy</span>
+                        {% endif %}
+                    </p>
+
+                    <p><strong>Mức độ ưu tiên:</strong></p>
+                    <p>
+                        {% if ticket.priority == 'critical' %}
+                            <span class="tag is-danger is-medium">🔹 Khẩn cấp</span>
+                        {% elif ticket.priority == 'high' %}
+                            <span class="tag is-warning is-medium">🔸 Cao</span>
+                        {% elif ticket.priority == 'medium' %}
+                            <span class="tag is-info is-medium">🟡 Trung bình</span>
+                        {% else %}
+                            <span class="tag is-light is-medium">⚪ Thấp</span>
+                        {% endif %}
+                    </p>
+
+                    <p><strong>Người yêu cầu:</strong></p>
+                    <p>{{ ticket.requester_name }}</p>
+                    <p class="is-size-7 has-text-grey">{{ ticket.requester_email }}</p>
+                    {% if ticket.requester_phone %}
+                        <p class="is-size-7 has-text-grey">{{ ticket.requester_phone }}</p>
+                    {% endif %}
+
+                    <p><strong>Công ty:</strong></p>
+                    <p>{{ ticket.company.name }}</p>
+
+                    {% if ticket.department %}
+                    <p><strong>Phòng ban:</strong></p>
+                    <p>{{ ticket.department.name }}</p>
+                    {% endif %}
+
+                    {% if ticket.category %}
+                    <p><strong>Loại yêu cầu:</strong></p>
+                    <p>{{ ticket.category.name }}</p>
+                    {% endif %}
+
+                    {% if ticket.assigned_to %}
+                    <p><strong>Người được phân công:</strong></p>
+                    <p>{{ ticket.assigned_to.get_full_name|default:ticket.assigned_to.username }}</p>
+                    {% endif %}
+
+                    <p><strong>Ngày tạo:</strong></p>
+                    <p>{{ ticket.created_at|date:"d/m/Y H:i" }}</p>
+
+                    {% if ticket.resolved_at %}
+                    <p><strong>Ngày xử lý xong:</strong></p>
+                    <p>{{ ticket.resolved_at|date:"d/m/Y H:i" }}</p>
+                    {% endif %}
+
+                    {% if ticket.repeat_count > 3 %}
+                    <div class="notification is-warning is-light">
+                        <p class="has-text-weight-bold">⚠️ Cảnh báo</p>
+                        <p>Ticket này đã lặp lại {{ ticket.repeat_count }} lần trong tháng này!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Form cập nhật (chỉ IT) -->
+        {% if user.is_staff and update_form %}
+        <div class="card mb-5">
+            <header class="card-header">
+                <p class="card-header-title">Cập nhật ticket</p>
+            </header>
+            <div class="card-content">
+                <form method="post" action="{% url 'tickets:ticket_update' ticket.ticket_number %}">
+                    {% csrf_token %}
+                    <div class="field">
+                        <label class="label">Phân công cho</label>
+                        <div class="control" id="assigned-to-container">
+                            <div class="field has-addons">
+                                <div class="control is-expanded">
+                                    {{ update_form.assigned_to }}
+                                </div>
+                                <div class="control">
+                                    <button type="button" class="button is-primary" id="btn-create-user-assign">
+                                        <span class="icon">
+                                            <i class="fas fa-plus"></i>
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% if update_form.assigned_to.errors %}
+                            <p class="help is-danger">{{ update_form.assigned_to.errors }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="field">
+                        <label class="label">Trạng thái</label>
+                        <div class="control">
+                            {{ update_form.status }}
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">Mức độ ưu tiên</label>
+                        <div class="control">
+                            {{ update_form.priority }}
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">Kết quả xử lý</label>
+                        <div class="control">
+                            {{ update_form.resolution }}
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="control">
+                            <button type="submit" class="button is-primary is-fullwidth">
+                                <span class="icon">
+                                    <i class="fas fa-save"></i>
+                                </span>
+                                <span>Cập nhật</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Upload file -->
+        <div class="card">
+            <header class="card-header">
+                <p class="card-header-title">Upload file</p>
+            </header>
+            <div class="card-content">
+                <form method="post" action="{% url 'tickets:ticket_attachment' ticket.ticket_number %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="field">
+                        <div class="file has-name is-fullwidth">
+                            <label class="file-label">
+                                {{ attachment_form.file }}
+                                <span class="file-cta">
+                                    <span class="file-icon">
+                                        <i class="fas fa-upload"></i>
+                                    </span>
+                                    <span class="file-label">Chọn file</span>
+                                </span>
+                                <span class="file-name" id="attachment-file-name">Chưa chọn file</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="control">
+                            <button type="submit" class="button is-primary is-fullwidth">
+                                <span class="icon">
+                                    <i class="fas fa-upload"></i>
+                                </span>
+                                <span>Upload</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.querySelector('input[type="file"]');
+    const fileName = document.getElementById('attachment-file-name');
+    
+    if (fileInput && fileName) {
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                fileName.textContent = this.files[0].name;
+            } else {
+                fileName.textContent = 'Chưa chọn file';
+            }
+        });
+    }
+
+    // Select2 cho assigned_to
+    const assignedToSelect = document.getElementById('id_assigned_to');
+    if (assignedToSelect) {
+        function initSelect2() {
+            if (typeof $ === 'undefined' || typeof $.fn.select2 === 'undefined') {
+                setTimeout(initSelect2, 100);
+                return;
+            }
+            
+            const currentValue = $(assignedToSelect).val();
+            const currentText = $(assignedToSelect).find('option:selected').text();
+            
+            $(assignedToSelect).select2({
+                width: '100%',
+                placeholder: 'Chọn hoặc tìm kiếm user...',
+                allowClear: true,
+                dropdownParent: $(assignedToSelect).closest('#assigned-to-container'),
+                language: {
+                    noResults: function() {
+                        return 'Không tìm thấy. Click nút + để tạo mới.';
+                    },
+                    searching: function() {
+                        return 'Đang tìm kiếm...';
+                    }
+                },
+                ajax: {
+                    url: '{% url "tickets:search_users" %}',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            q: params.term,
+                            page: params.page
+                        };
+                    },
+                    processResults: function (data, params) {
+                        params.page = params.page || 1;
+                        return {
+                            results: data.users.map(function(user) {
+                                return {
+                                    id: user.id,
+                                    text: user.display
+                                };
+                            }),
+                            pagination: {
+                                more: false
+                            }
+                        };
+                    },
+                    cache: true
+                },
+                minimumInputLength: 2
+            });
+            
+            if (currentValue && currentText && currentValue !== '') {
+                if ($(assignedToSelect).find('option[value="' + currentValue + '"]').length === 0) {
+                    const option = new Option(currentText, currentValue, true, true);
+                    $(assignedToSelect).append(option);
+                }
+                $(assignedToSelect).trigger('change');
+            }
+        }
+        
+        initSelect2();
+    }
+
+    // Button tạo user
+    const btnCreateUser = document.getElementById('btn-create-user-assign');
+    if (btnCreateUser) {
+        btnCreateUser.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            showCreateUserModal();
+        });
+    }
+
+    function showCreateUserModal() {
+        const modalHtml = `
+            <div class="modal is-active" id="createUserModal">
+                <div class="modal-background" onclick="document.getElementById('createUserModal').remove()"></div>
+                <div class="modal-card">
+                    <header class="modal-card-head">
+                        <p class="modal-card-title">
+                            <span class="icon-text">
+                                <span class="icon">
+                                    <i class="fas fa-user-plus"></i>
+                                </span>
+                                <span>Tạo user mới nhanh</span>
+                            </span>
+                        </p>
+                        <button class="delete" aria-label="close" onclick="document.getElementById('createUserModal').remove()"></button>
+                    </header>
+                    <section class="modal-card-body">
+                        <div class="field">
+                            <label class="label">Tên đầy đủ <span class="has-text-danger">*</span></label>
+                            <div class="control">
+                                <input type="text" class="input" id="new_user_name" placeholder="Ví dụ: Nguyễn Văn A" required autofocus>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label class="label">Tên đăng nhập</label>
+                            <div class="control">
+                                <input type="text" class="input" id="new_user_username" placeholder="Ví dụ: nguyenvana (để trống sẽ tự tạo)" pattern="[a-zA-Z0-9_]+" title="Chỉ cho phép chữ cái, số và dấu gạch dưới">
+                            </div>
+                            <p class="help">Chỉ cho phép chữ cái, số và dấu gạch dưới (_). Để trống sẽ tự động tạo từ tên.</p>
+                        </div>
+                        <div class="field">
+                            <label class="label">Email <span class="has-text-danger">*</span></label>
+                            <div class="control">
+                                <input type="email" class="input" id="new_user_email" placeholder="email@example.com" required>
+                            </div>
+                        </div>
+                        <div class="notification is-info is-light">
+                            <span class="icon">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                            <strong>Password mặc định:</strong> <code>Pega@2025</code>
+                            <br><small>Người dùng nên đổi password sau khi đăng nhập lần đầu.</small>
+                        </div>
+                    </section>
+                    <footer class="modal-card-foot">
+                        <button class="button" onclick="document.getElementById('createUserModal').remove()">Hủy</button>
+                        <button class="button is-primary" id="btn-save-user">
+                            <span class="icon">
+                                <i class="fas fa-check"></i>
+                            </span>
+                            <span>Tạo user</span>
+                        </button>
+                    </footer>
+                </div>
+            </div>
+        `;
+        
+        const oldModal = document.getElementById('createUserModal');
+        if (oldModal) {
+            oldModal.remove();
+        }
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        document.getElementById('btn-save-user').addEventListener('click', function() {
+            const name = document.getElementById('new_user_name').value.trim();
+            const username = document.getElementById('new_user_username').value.trim();
+            const email = document.getElementById('new_user_email').value.trim();
+            
+            if (!name || !email) {
+                alert('Vui lòng nhập đầy đủ Tên và Email');
+                return;
+            }
+            
+            // Validate username nếu có nhập
+            if (username) {
+                const usernamePattern = /^[a-zA-Z0-9_]+$/;
+                if (!usernamePattern.test(username)) {
+                    alert('Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới (_)');
+                    return;
+                }
+            }
+            
+            const btnSave = this;
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<span class="icon"><i class="fas fa-spinner fa-spin"></i></span><span>Đang tạo...</span>';
+            
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('email', email);
+            if (username) {
+                formData.append('username', username);
+            }
+            
+            fetch('{% url "tickets:create_user_quick" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const select = document.getElementById('id_assigned_to');
+                    const option = document.createElement('option');
+                    option.value = data.user.id;
+                    option.textContent = data.user.display;
+                    option.selected = true;
+                    select.appendChild(option);
+                    
+                    if (typeof $ !== 'undefined' && $.fn.select2) {
+                        $(select).append(new Option(data.user.display, data.user.id, true, true)).trigger('change');
+                    }
+                    
+                    document.getElementById('createUserModal').remove();
+                } else {
+                    alert('Lỗi: ' + (data.error || 'Không thể tạo user'));
+                    btnSave.disabled = false;
+                    btnSave.innerHTML = '<span class="icon"><i class="fas fa-check"></i></span><span>Tạo user</span>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi tạo user');
+                btnSave.disabled = false;
+                btnSave.innerHTML = '<span class="icon"><i class="fas fa-check"></i></span><span>Tạo user</span>';
+            });
+        });
+    }
+});
+</script>
+{% endblock %}
+

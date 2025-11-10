@@ -1,0 +1,199 @@
+{% extends 'tickets/base.html' %}
+
+{% block page_title %}Yêu cầu hỗ trợ IT{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px;">
+    <div class="mb-5">
+        <h1 class="title is-3">
+            <span class="icon-text">
+                <span class="icon">
+                    <i class="fas fa-ticket-alt"></i>
+                </span>
+                <span>Yêu cầu hỗ trợ IT</span>
+            </span>
+        </h1>
+        <p class="subtitle">Điền thông tin bên dưới để tạo ticket hỗ trợ. Chúng tôi sẽ liên hệ với bạn sớm nhất có thể.</p>
+    </div>
+
+    <div class="card">
+        <div class="card-content">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="field">
+                    <label class="label">Họ và tên <span class="has-text-danger">*</span></label>
+                    <div class="control">
+                        {{ form.requester_name }}
+                    </div>
+                    {% if form.requester_name.errors %}
+                        <p class="help is-danger">{{ form.requester_name.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="columns">
+                    <div class="column">
+                        <div class="field">
+                            <label class="label">Email <span class="has-text-danger">*</span></label>
+                            <div class="control">
+                                {{ form.requester_email }}
+                            </div>
+                            {% if form.requester_email.errors %}
+                                <p class="help is-danger">{{ form.requester_email.errors }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="field">
+                            <label class="label">Số điện thoại</label>
+                            <div class="control">
+                                {{ form.requester_phone }}
+                            </div>
+                            {% if form.requester_phone.errors %}
+                                <p class="help is-danger">{{ form.requester_phone.errors }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="columns">
+                    <div class="column">
+                        <div class="field">
+                            <label class="label">Công ty <span class="has-text-danger">*</span></label>
+                            <div class="control">
+                                {{ form.company }}
+                            </div>
+                            {% if form.company.errors %}
+                                <p class="help is-danger">{{ form.company.errors }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="field">
+                            <label class="label">Phòng ban</label>
+                            <div class="control">
+                                {{ form.department }}
+                            </div>
+                            {% if form.department.errors %}
+                                <p class="help is-danger">{{ form.department.errors }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="columns">
+                    <div class="column">
+                        <div class="field">
+                            <label class="label">Loại yêu cầu</label>
+                            <div class="control">
+                                {{ form.category }}
+                            </div>
+                            {% if form.category.errors %}
+                                <p class="help is-danger">{{ form.category.errors }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="column">
+                        <div class="field">
+                            <label class="label">Mức độ ưu tiên</label>
+                            <div class="control">
+                                {{ form.priority }}
+                            </div>
+                            {% if form.priority.errors %}
+                                <p class="help is-danger">{{ form.priority.errors }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Tiêu đề <span class="has-text-danger">*</span></label>
+                    <div class="control">
+                        {{ form.title }}
+                    </div>
+                    {% if form.title.errors %}
+                        <p class="help is-danger">{{ form.title.errors }}</p>
+                    {% endif %}
+                    <p class="help">Tóm tắt ngắn gọn vấn đề của bạn</p>
+                </div>
+
+                <div class="field">
+                    <label class="label">Mô tả chi tiết <span class="has-text-danger">*</span></label>
+                    <div class="control">
+                        {{ form.description }}
+                    </div>
+                    {% if form.description.errors %}
+                        <p class="help is-danger">{{ form.description.errors }}</p>
+                    {% endif %}
+                    <p class="help">Mô tả chi tiết vấn đề bạn gặp phải, các bước đã thử, lỗi gặp phải...</p>
+                </div>
+
+                <div class="field">
+                    <label class="label">File đính kèm (nếu có)</label>
+                    <div class="control">
+                        <div class="file has-name">
+                            <label class="file-label">
+                                {{ form.attachment }}
+                                <span class="file-cta">
+                                    <span class="file-icon">
+                                        <i class="fas fa-upload"></i>
+                                    </span>
+                                    <span class="file-label">Chọn file</span>
+                                </span>
+                                <span class="file-name" id="file-name">Chưa chọn file</span>
+                            </label>
+                        </div>
+                    </div>
+                    {% if form.attachment.errors %}
+                        <p class="help is-danger">{{ form.attachment.errors }}</p>
+                    {% endif %}
+                    <p class="help">Hỗ trợ: PDF, DOC, XLS, JPG, PNG, ZIP, RAR (tối đa 10MB)</p>
+                </div>
+
+                <div class="field is-grouped">
+                    <div class="control">
+                        <button type="submit" class="button is-primary is-large">
+                            <span class="icon">
+                                <i class="fas fa-paper-plane"></i>
+                            </span>
+                            <span>Gửi yêu cầu</span>
+                        </button>
+                    </div>
+                    <div class="control">
+                        <a href="{% url 'tickets:ticket_list' %}" class="button is-light is-large">
+                            <span>Hủy</span>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="notification is-info is-light mt-5">
+        <p class="has-text-weight-bold">Lưu ý:</p>
+        <ul>
+            <li>Sau khi gửi yêu cầu, bạn sẽ nhận được số ticket để theo dõi.</li>
+            <li>Bộ phận IT sẽ tiếp nhận và xử lý yêu cầu của bạn trong thời gian sớm nhất.</li>
+            <li>Bạn có thể theo dõi trạng thái ticket bằng số ticket hoặc email đã đăng ký.</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.querySelector('input[type="file"]');
+    const fileName = document.getElementById('file-name');
+    
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                fileName.textContent = this.files[0].name;
+            } else {
+                fileName.textContent = 'Chưa chọn file';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+

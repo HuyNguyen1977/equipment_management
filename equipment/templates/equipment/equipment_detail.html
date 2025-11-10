@@ -251,6 +251,12 @@
                             <td>{{ equipment.memory }}</td>
                         </tr>
                         {% endif %}
+                        {% if equipment.storage %}
+                        <tr>
+                            <th>HDD/SSD:</th>
+                            <td>{{ equipment.storage }}</td>
+                        </tr>
+                        {% endif %}
                         {% if equipment.graphics_card %}
                         <tr>
                             <th>Card đồ họa:</th>

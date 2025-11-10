@@ -60,6 +60,9 @@
                     <a class="navbar-item" href="{% url 'equipment:report' %}">
                         <i class="fas fa-chart-bar mr-2"></i> Báo cáo
                     </a>
+                    <a class="navbar-item" href="{% url 'tickets:ticket_list' %}">
+                        <i class="fas fa-ticket-alt mr-2"></i> Ticket hỗ trợ
+                    </a>
                     <a class="navbar-item" href="{% url 'admin:index' %}">
                         <i class="fas fa-cog mr-2"></i> Admin
                     </a>
@@ -67,6 +70,9 @@
                         <i class="fas fa-sign-out-alt mr-2"></i> Đăng xuất ({{ user.username }})
                     </a>
                 {% else %}
+                    <a class="navbar-item" href="{% url 'tickets:ticket_create' %}">
+                        <i class="fas fa-ticket-alt mr-2"></i> Yêu cầu hỗ trợ
+                    </a>
                     <a class="navbar-item" href="{% url 'equipment:login' %}">
                         <i class="fas fa-sign-in-alt mr-2"></i> Đăng nhập
                     </a>

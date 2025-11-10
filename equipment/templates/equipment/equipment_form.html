@@ -214,7 +214,21 @@
                             </div>
                         </div>
                         <div class="columns">
-                            <div class="column">
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">HDD/SSD</label>
+                                    <div class="control">
+                                        {{ form.storage }}
+                                    </div>
+                                    {% if form.storage.help_text %}
+                                        <p class="help">{{ form.storage.help_text }}</p>
+                                    {% endif %}
+                                    {% if form.storage.errors %}
+                                        <p class="help is-danger">{{ form.storage.errors }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="column is-half">
                                 <div class="field">
                                     <label class="label">Card đồ họa</label>
                                     <div class="control">

@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
 from django.db.models import Q, Count, Exists, OuterRef
+from django.core.paginator import Paginator
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
@@ -55,9 +56,15 @@ def index(request):
     )
     equipment_list = equipment_list.annotate(has_liquidation=Exists(liquidation_exists))
     
+    # Phân trang
+    paginator = Paginator(equipment_list, 20)  # 20 items per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
     context = {
         'companies': companies,
-        'equipment_list': equipment_list,
+        'equipment_list': page_obj,
+        'page_obj': page_obj,
         'selected_company': company_id,
         'selected_type': equipment_type,
         'search_query': search,
@@ -684,7 +691,7 @@ def export_to_excel(equipment_list):
     center_alignment = Alignment(horizontal='center', vertical='center')
     
     # Tiêu đề
-    ws.merge_cells('A1:O1')
+    ws.merge_cells('A1:Q1')
     ws['A1'] = 'BÁO CÁO THIẾT BỊ IT'
     ws['A1'].font = Font(bold=True, size=16)
     ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
@@ -694,7 +701,7 @@ def export_to_excel(equipment_list):
     headers = [
         'STT', 'Mã thiết bị', 'Tên thiết bị', 'Công ty', 'Miền', 'Loại thiết bị',
         'Tên máy', 'Hệ điều hành', 'Nhà sản xuất', 'Model', 'Bộ xử lý',
-        'Bộ nhớ', 'Card đồ họa', 'Người sử dụng', 'Trạng thái'
+        'Bộ nhớ', 'HDD/SSD', 'Card đồ họa', 'Người sử dụng', 'Email', 'Trạng thái'
     ]
     
     for col_num, header in enumerate(headers, 1):
@@ -719,8 +726,10 @@ def export_to_excel(equipment_list):
         
         # Người sử dụng
         current_user = ''
+        user_email = ''
         if equipment.current_user:
             current_user = equipment.current_user.get_full_name() or equipment.current_user.username
+            user_email = equipment.current_user.email or ''
         
         # Miền
         region_display = dict(Equipment.REGIONS).get(equipment.region, equipment.region)
@@ -741,8 +750,10 @@ def export_to_excel(equipment_list):
             equipment.system_model or '',
             equipment.processor or '',
             equipment.memory or '',
+            equipment.storage or '',
             equipment.graphics_card or '',
             current_user,
+            user_email,
             status,
         ]
         
@@ -758,7 +769,7 @@ def export_to_excel(equipment_list):
         row_num += 1
     
     # Điều chỉnh độ rộng cột
-    column_widths = [6, 15, 25, 20, 12, 15, 20, 20, 20, 20, 25, 15, 20, 20, 15]
+    column_widths = [6, 15, 25, 20, 12, 15, 20, 20, 20, 20, 25, 15, 20, 20, 20, 25, 15]
     for col_num, width in enumerate(column_widths, 1):
         ws.column_dimensions[get_column_letter(col_num)].width = width
     

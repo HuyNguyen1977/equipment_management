@@ -24,7 +24,7 @@ class EquipmentForm(forms.ModelForm):
         fields = [
             'company', 'region', 'name', 'code', 'equipment_type', 'commission_date',
             'machine_name', 'operating_system', 'system_manufacturer', 
-            'system_model', 'processor', 'memory', 'graphics_card',
+            'system_model', 'processor', 'memory', 'storage', 'graphics_card',
             'monitor_name', 'monitor_model',
             'documentation', 'current_user', 'is_active'
         ]
@@ -41,6 +41,7 @@ class EquipmentForm(forms.ModelForm):
             'system_model': forms.TextInput(attrs={'class': 'input'}),
             'processor': forms.TextInput(attrs={'class': 'input'}),
             'memory': forms.TextInput(attrs={'class': 'input'}),
+            'storage': forms.TextInput(attrs={'class': 'input', 'placeholder': 'Ví dụ: SSD 256GB, HDD 1TB'}),
             'graphics_card': forms.TextInput(attrs={'class': 'input'}),
             'monitor_name': forms.TextInput(attrs={'class': 'input'}),
             'monitor_model': forms.TextInput(attrs={'class': 'input'}),
@@ -74,7 +75,7 @@ class EquipmentForm(forms.ModelForm):
         if self.instance and self.instance.pk:
             if self.instance.equipment_type not in ['laptop', 'desktop']:
                 for field in ['machine_name', 'operating_system', 'system_manufacturer', 
-                             'system_model', 'processor', 'memory', 'graphics_card',
+                             'system_model', 'processor', 'memory', 'storage', 'graphics_card',
                              'monitor_name', 'monitor_model']:
                     self.fields[field].widget = forms.HiddenInput()
     
