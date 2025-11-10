@@ -4,11 +4,14 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
-from django.db.models import Q
+from django.db.models import Q, Count, Exists, OuterRef
 from django.utils import timezone
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
 from datetime import date
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from openpyxl.utils import get_column_letter
 from .models import Company, Equipment, EquipmentHistory
 from .forms import EquipmentForm, EquipmentHistoryForm
 
@@ -565,4 +568,211 @@ def history_delete(request, pk):
         'history': history,
     }
     return render(request, 'equipment/history_delete.html', context)
+
+
+@login_required
+def report(request):
+    """Trang báo cáo thiết bị với khả năng xuất Excel"""
+    from django.db.models import Exists, OuterRef
+    
+    # Lấy tất cả thiết bị
+    equipment_list = Equipment.objects.select_related('company', 'current_user').all()
+    
+    # Filter theo công ty
+    company_id = request.GET.get('company')
+    if company_id:
+        equipment_list = equipment_list.filter(company_id=company_id)
+    
+    # Filter theo loại thiết bị
+    equipment_type = request.GET.get('equipment_type')
+    if equipment_type:
+        equipment_list = equipment_list.filter(equipment_type=equipment_type)
+    
+    # Filter theo miền
+    region = request.GET.get('region')
+    if region:
+        equipment_list = equipment_list.filter(region=region)
+    
+    # Filter theo trạng thái
+    status = request.GET.get('status')
+    if status == 'active':
+        equipment_list = equipment_list.filter(is_active=True)
+    elif status == 'inactive':
+        equipment_list = equipment_list.filter(is_active=False)
+    
+    # Search
+    search = request.GET.get('search', '').strip()
+    if search:
+        equipment_list = equipment_list.filter(
+            Q(name__icontains=search) |
+            Q(code__icontains=search) |
+            Q(machine_name__icontains=search) |
+            Q(current_user__username__icontains=search) |
+            Q(current_user__first_name__icontains=search) |
+            Q(current_user__last_name__icontains=search) |
+            Q(company__name__icontains=search)
+        )
+    
+    # Kiểm tra xem thiết bị nào có lịch sử thanh lý
+    liquidation_exists = EquipmentHistory.objects.filter(
+        equipment=OuterRef('pk'),
+        action_type='liquidation'
+    )
+    equipment_list = equipment_list.annotate(has_liquidation=Exists(liquidation_exists))
+    
+    # Nếu có parameter export=excel, xuất file Excel
+    if request.GET.get('export') == 'excel':
+        return export_to_excel(equipment_list)
+    
+    # Thống kê tổng quan
+    total_equipment = Equipment.objects.count()
+    active_equipment = Equipment.objects.filter(is_active=True).count()
+    inactive_equipment = Equipment.objects.filter(is_active=False).count()
+    
+    # Đếm theo miền
+    region_stats = Equipment.objects.values('region').annotate(count=Count('id'))
+    region_dict = {r['region']: r['count'] for r in region_stats}
+    
+    # Đếm theo loại thiết bị
+    type_stats = Equipment.objects.values('equipment_type').annotate(count=Count('id'))
+    type_dict = {t['equipment_type']: t['count'] for t in type_stats}
+    
+    # Đếm thiết bị đang được sử dụng
+    in_use = Equipment.objects.filter(current_user__isnull=False).count()
+    
+    # Đếm thiết bị đã thanh lý
+    liquidation_equipment = Equipment.objects.filter(
+        histories__action_type='liquidation'
+    ).distinct().count()
+    
+    companies = Company.objects.all()
+    
+    context = {
+        'equipment_list': equipment_list,
+        'companies': companies,
+        'selected_company': company_id,
+        'selected_type': equipment_type,
+        'selected_region': region,
+        'selected_status': status,
+        'search_query': search,
+        'total_equipment': total_equipment,
+        'active_equipment': active_equipment,
+        'inactive_equipment': inactive_equipment,
+        'region_stats': region_dict,
+        'type_stats': type_dict,
+        'in_use': in_use,
+        'liquidation_equipment': liquidation_equipment,
+    }
+    return render(request, 'equipment/report.html', context)
+
+
+def export_to_excel(equipment_list):
+    """Xuất danh sách thiết bị ra file Excel"""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Báo cáo thiết bị"
+    
+    # Định nghĩa style
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    border_style = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    center_alignment = Alignment(horizontal='center', vertical='center')
+    
+    # Tiêu đề
+    ws.merge_cells('A1:O1')
+    ws['A1'] = 'BÁO CÁO THIẾT BỊ IT'
+    ws['A1'].font = Font(bold=True, size=16)
+    ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
+    ws.row_dimensions[1].height = 30
+    
+    # Header row
+    headers = [
+        'STT', 'Mã thiết bị', 'Tên thiết bị', 'Công ty', 'Miền', 'Loại thiết bị',
+        'Tên máy', 'Hệ điều hành', 'Nhà sản xuất', 'Model', 'Bộ xử lý',
+        'Bộ nhớ', 'Card đồ họa', 'Người sử dụng', 'Trạng thái'
+    ]
+    
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=3, column=col_num)
+        cell.value = header
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.border = border_style
+        cell.alignment = center_alignment
+    
+    # Dữ liệu
+    row_num = 4
+    for idx, equipment in enumerate(equipment_list, 1):
+        # Kiểm tra trạng thái
+        has_liquidation = getattr(equipment, 'has_liquidation', False)
+        if has_liquidation:
+            status = 'Đã thanh lý'
+        elif equipment.is_active:
+            status = 'Hoạt động'
+        else:
+            status = 'Không hoạt động'
+        
+        # Người sử dụng
+        current_user = ''
+        if equipment.current_user:
+            current_user = equipment.current_user.get_full_name() or equipment.current_user.username
+        
+        # Miền
+        region_display = dict(Equipment.REGIONS).get(equipment.region, equipment.region)
+        
+        # Loại thiết bị
+        type_display = dict(Equipment.EQUIPMENT_TYPES).get(equipment.equipment_type, equipment.equipment_type)
+        
+        data = [
+            idx,
+            equipment.code,
+            equipment.name,
+            equipment.company.name if equipment.company else '',
+            region_display,
+            type_display,
+            equipment.machine_name or '',
+            equipment.operating_system or '',
+            equipment.system_manufacturer or '',
+            equipment.system_model or '',
+            equipment.processor or '',
+            equipment.memory or '',
+            equipment.graphics_card or '',
+            current_user,
+            status,
+        ]
+        
+        for col_num, value in enumerate(data, 1):
+            cell = ws.cell(row=row_num, column=col_num)
+            cell.value = value
+            cell.border = border_style
+            if col_num == 1:  # STT
+                cell.alignment = center_alignment
+            else:
+                cell.alignment = Alignment(vertical='center', wrap_text=True)
+        
+        row_num += 1
+    
+    # Điều chỉnh độ rộng cột
+    column_widths = [6, 15, 25, 20, 12, 15, 20, 20, 20, 20, 25, 15, 20, 20, 15]
+    for col_num, width in enumerate(column_widths, 1):
+        ws.column_dimensions[get_column_letter(col_num)].width = width
+    
+    # Đặt chiều cao hàng
+    for row in range(3, row_num):
+        ws.row_dimensions[row].height = 25
+    
+    # Tạo response
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    filename = f'bao_cao_thiet_bi_{date.today().strftime("%Y%m%d")}.xlsx'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    wb.save(response)
+    return response
 

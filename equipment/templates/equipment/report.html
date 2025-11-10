@@ -1,0 +1,396 @@
+{% extends 'equipment/base.html' %}
+
+{% block title %}Báo cáo thiết bị{% endblock %}
+
+{% block content %}
+<div class="mb-5">
+    <div class="level">
+        <div class="level-left">
+            <div>
+                <h1 class="title is-3">
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </span>
+                        <span>Báo cáo thiết bị</span>
+                    </span>
+                </h1>
+                <p class="subtitle">Thống kê và xuất báo cáo thiết bị IT</p>
+            </div>
+        </div>
+        <div class="level-right">
+            <a href="?{% for key, value in request.GET.items %}{% if key != 'export' %}{{ key }}={{ value }}&{% endif %}{% endfor %}export=excel" class="button is-success is-large">
+                <span class="icon">
+                    <i class="fas fa-file-excel"></i>
+                </span>
+                <span>Xuất Excel</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Thống kê tổng quan -->
+<div class="columns mb-5">
+    <div class="column">
+        <div class="card has-background-primary-light">
+            <div class="card-content">
+                <div class="level">
+                    <div class="level-left">
+                        <div>
+                            <p class="heading">Tổng số thiết bị</p>
+                            <p class="title is-3">{{ total_equipment }}</p>
+                        </div>
+                    </div>
+                    <div class="level-right">
+                        <span class="icon is-large has-text-primary">
+                            <i class="fas fa-desktop fa-2x"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="column">
+        <div class="card has-background-success-light">
+            <div class="card-content">
+                <div class="level">
+                    <div class="level-left">
+                        <div>
+                            <p class="heading">Đang hoạt động</p>
+                            <p class="title is-3">{{ active_equipment }}</p>
+                        </div>
+                    </div>
+                    <div class="level-right">
+                        <span class="icon is-large has-text-success">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="column">
+        <div class="card has-background-warning-light">
+            <div class="card-content">
+                <div class="level">
+                    <div class="level-left">
+                        <div>
+                            <p class="heading">Đang sử dụng</p>
+                            <p class="title is-3">{{ in_use }}</p>
+                        </div>
+                    </div>
+                    <div class="level-right">
+                        <span class="icon is-large has-text-warning">
+                            <i class="fas fa-user-check fa-2x"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="column">
+        <div class="card has-background-danger-light">
+            <div class="card-content">
+                <div class="level">
+                    <div class="level-left">
+                        <div>
+                            <p class="heading">Đã thanh lý</p>
+                            <p class="title is-3">{{ liquidation_equipment }}</p>
+                        </div>
+                    </div>
+                    <div class="level-right">
+                        <span class="icon is-large has-text-danger">
+                            <i class="fas fa-trash-alt fa-2x"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Thống kê theo miền và loại -->
+<div class="columns mb-5">
+    <div class="column">
+        <div class="card">
+            <header class="card-header">
+                <p class="card-header-title">
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="fas fa-map-marked-alt"></i>
+                        </span>
+                        <span>Thống kê theo miền</span>
+                    </span>
+                </p>
+            </header>
+            <div class="card-content">
+                <div class="content">
+                    <table class="table is-fullwidth">
+                        <thead>
+                            <tr>
+                                <th>Miền</th>
+                                <th>Số lượng</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Miền Nam</td>
+                                <td><strong>{{ region_stats.MN|default:0 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Miền Trung</td>
+                                <td><strong>{{ region_stats.MT|default:0 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Miền Bắc</td>
+                                <td><strong>{{ region_stats.MB|default:0 }}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="column">
+        <div class="card">
+            <header class="card-header">
+                <p class="card-header-title">
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="fas fa-tags"></i>
+                        </span>
+                        <span>Thống kê theo loại</span>
+                    </span>
+                </p>
+            </header>
+            <div class="card-content">
+                <div class="content">
+                    <table class="table is-fullwidth">
+                        <thead>
+                            <tr>
+                                <th>Loại thiết bị</th>
+                                <th>Số lượng</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Laptop</td>
+                                <td><strong>{{ type_stats.laptop|default:0 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Desktop</td>
+                                <td><strong>{{ type_stats.desktop|default:0 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Router</td>
+                                <td><strong>{{ type_stats.router|default:0 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Switch</td>
+                                <td><strong>{{ type_stats.switch|default:0 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Máy in</td>
+                                <td><strong>{{ type_stats.printer|default:0 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Máy quét</td>
+                                <td><strong>{{ type_stats.scanner|default:0 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Khác</td>
+                                <td><strong>{{ type_stats.other|default:0 }}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-5">
+    <div class="card-content">
+        <form method="get">
+            <div class="columns">
+                <div class="column is-one-fifth">
+                    <div class="field">
+                        <label class="label">Công ty</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="company">
+                                    <option value="">Tất cả</option>
+                                    {% for company in companies %}
+                                        <option value="{{ company.id }}" {% if selected_company == company.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ company.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-one-fifth">
+                    <div class="field">
+                        <label class="label">Loại thiết bị</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="equipment_type">
+                                    <option value="">Tất cả</option>
+                                    <option value="laptop" {% if selected_type == "laptop" %}selected{% endif %}>Laptop</option>
+                                    <option value="desktop" {% if selected_type == "desktop" %}selected{% endif %}>Desktop</option>
+                                    <option value="router" {% if selected_type == "router" %}selected{% endif %}>Router</option>
+                                    <option value="switch" {% if selected_type == "switch" %}selected{% endif %}>Switch</option>
+                                    <option value="printer" {% if selected_type == "printer" %}selected{% endif %}>Máy in</option>
+                                    <option value="scanner" {% if selected_type == "scanner" %}selected{% endif %}>Máy quét</option>
+                                    <option value="other" {% if selected_type == "other" %}selected{% endif %}>Khác</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-one-fifth">
+                    <div class="field">
+                        <label class="label">Miền</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="region">
+                                    <option value="">Tất cả</option>
+                                    <option value="MN" {% if selected_region == "MN" %}selected{% endif %}>Miền Nam</option>
+                                    <option value="MT" {% if selected_region == "MT" %}selected{% endif %}>Miền Trung</option>
+                                    <option value="MB" {% if selected_region == "MB" %}selected{% endif %}>Miền Bắc</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-one-fifth">
+                    <div class="field">
+                        <label class="label">Trạng thái</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="status">
+                                    <option value="">Tất cả</option>
+                                    <option value="active" {% if selected_status == "active" %}selected{% endif %}>Hoạt động</option>
+                                    <option value="inactive" {% if selected_status == "inactive" %}selected{% endif %}>Không hoạt động</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Tìm kiếm</label>
+                        <div class="control">
+                            <input type="text" name="search" class="input" placeholder="Tên, mã, tên máy, người dùng..." value="{% if search_query %}{{ search_query }}{% endif %}">
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-narrow">
+                    <div class="field">
+                        <label class="label">&nbsp;</label>
+                        <div class="control">
+                            <button type="submit" class="button is-primary">
+                                <span class="icon">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <span>Tìm</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Equipment List -->
+<div class="card">
+    <header class="card-header">
+        <p class="card-header-title">
+            <span class="icon-text">
+                <span class="icon">
+                    <i class="fas fa-list"></i>
+                </span>
+                <span>Danh sách thiết bị ({{ equipment_list.count }})</span>
+            </span>
+        </p>
+    </header>
+    <div class="card-content" style="padding: 0;">
+        {% if equipment_list %}
+            <div class="table-container">
+                <table class="table is-fullwidth is-hoverable mb-0">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Mã</th>
+                            <th>Tên thiết bị</th>
+                            <th>Công ty</th>
+                            <th>Miền</th>
+                            <th>Loại</th>
+                            <th>Người sử dụng</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for equipment in equipment_list %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td><strong>{{ equipment.code }}</strong></td>
+                                <td>{{ equipment.name }}</td>
+                                <td>{{ equipment.company.name }}</td>
+                                <td>
+                                    <span class="tag is-info">{{ equipment.get_region_display }}</span>
+                                </td>
+                                <td>
+                                    <span class="tag is-light">{{ equipment.get_equipment_type_display }}</span>
+                                </td>
+                                <td>
+                                    {% if equipment.current_user %}
+                                        <span class="tag is-primary">
+                                            <span class="icon">
+                                                <i class="fas fa-user"></i>
+                                            </span>
+                                            <span>{{ equipment.current_user.get_full_name|default:equipment.current_user.username }}</span>
+                                        </span>
+                                    {% else %}
+                                        <span class="has-text-grey">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if equipment.has_liquidation %}
+                                        <span class="tag is-danger">Đã thanh lý</span>
+                                    {% elif equipment.is_active %}
+                                        <span class="tag is-success">Hoạt động</span>
+                                    {% else %}
+                                        <span class="tag is-light">Ngừng</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="buttons">
+                                        <a href="{% url 'equipment:equipment_detail' equipment.pk %}" class="button is-small is-outlined is-primary" title="Chi tiết">
+                                            <span class="icon">
+                                                <i class="fas fa-eye"></i>
+                                            </span>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="has-text-centered" style="padding: 3rem;">
+                <span class="icon is-large has-text-grey-light">
+                    <i class="fas fa-inbox fa-3x"></i>
+                </span>
+                <p class="has-text-grey mt-4">Không có thiết bị nào phù hợp với bộ lọc</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

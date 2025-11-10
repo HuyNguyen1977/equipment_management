@@ -18,5 +18,6 @@ urlpatterns = [
     path('equipment/<int:equipment_pk>/history/add/', views.history_add, name='history_add'),
     path('history/<int:pk>/edit/', views.history_edit, name='history_edit'),
     path('history/<int:pk>/delete/', views.history_delete, name='history_delete'),
+    path('report/', views.report, name='report'),
 ]
 
