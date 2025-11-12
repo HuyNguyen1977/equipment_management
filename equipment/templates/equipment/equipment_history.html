@@ -19,7 +19,7 @@
     <div class="level-right">
         <div class="level-item">
             <div class="buttons">
-                {% if user.is_authenticated %}
+                {% if user.is_staff %}
                     <div class="dropdown is-hoverable">
                         <div class="dropdown-trigger">
                             <button class="button is-success" aria-haspopup="true" aria-controls="dropdown-menu">
@@ -211,7 +211,7 @@
                                 </td>
                                 <td>{{ history.signed_by }}</td>
                                 <td>
-                                    {% if user.is_authenticated %}
+                                    {% if user.is_staff %}
                                         <div class="buttons">
                                             <a href="{% url 'equipment:history_edit' history.pk %}" class="button is-small is-outlined is-warning" title="Sửa">
                                                 <span class="icon">
@@ -239,19 +239,12 @@
                     <i class="fas fa-inbox fa-3x"></i>
                 </span>
                 <p class="has-text-grey mt-4">Chưa có lịch sử</p>
-                {% if user.is_authenticated %}
+                {% if user.is_staff %}
                     <a href="{% url 'equipment:history_add' equipment.pk %}" class="button is-primary mt-4">
                         <span class="icon">
                             <i class="fas fa-plus-circle"></i>
                         </span>
                         <span>Thêm lịch sử đầu tiên</span>
-                    </a>
-                {% else %}
-                    <a href="{% url 'equipment:login' %}" class="button is-primary mt-4">
-                        <span class="icon">
-                            <i class="fas fa-sign-in-alt"></i>
-                        </span>
-                        <span>Đăng nhập để thêm lịch sử</span>
                     </a>
                 {% endif %}
             </div>

@@ -72,12 +72,23 @@
                         <div class="field">
                             <label class="label">Phòng ban</label>
                             <div class="control">
+                                {{ form.department_parent }}
+                            </div>
+                            {% if form.department_parent.errors %}
+                                <p class="help is-danger">{{ form.department_parent.errors }}</p>
+                            {% endif %}
+                        </div>
+                        {% if form.department %}
+                        <div class="field" id="department-child-field" style="display: none;">
+                            <label class="label"></label>
+                            <div class="control">
                                 {{ form.department }}
                             </div>
                             {% if form.department.errors %}
                                 <p class="help is-danger">{{ form.department.errors }}</p>
                             {% endif %}
                         </div>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -86,12 +97,23 @@
                         <div class="field">
                             <label class="label">Loại yêu cầu</label>
                             <div class="control">
+                                {{ form.category_parent }}
+                            </div>
+                            {% if form.category_parent.errors %}
+                                <p class="help is-danger">{{ form.category_parent.errors }}</p>
+                            {% endif %}
+                        </div>
+                        {% if form.category %}
+                        <div class="field" id="category-child-field" style="display: none;">
+                            <label class="label"></label>
+                            <div class="control">
                                 {{ form.category }}
                             </div>
                             {% if form.category.errors %}
                                 <p class="help is-danger">{{ form.category.errors }}</p>
                             {% endif %}
                         </div>
+                        {% endif %}
                     </div>
                     <div class="column">
                         <div class="field">
@@ -192,6 +214,94 @@ document.addEventListener('DOMContentLoaded', function() {
                 fileName.textContent = 'Chưa chọn file';
             }
         });
+    }
+    
+    // Xử lý dropdown phân cấp cho Phòng ban
+    const departmentParent = document.getElementById('id_department_parent');
+    const departmentChild = document.getElementById('id_department');
+    const departmentChildField = document.getElementById('department-child-field');
+    
+    if (departmentParent && departmentChild) {
+        function loadDepartments(parentId) {
+            if (!parentId) {
+                if (departmentChildField) departmentChildField.style.display = 'none';
+                departmentChild.innerHTML = '<option value="">---------</option>';
+                return;
+            }
+            
+            fetch(`{% url 'tickets:get_departments' %}?parent_id=${parentId}`)
+                .then(response => response.json())
+                .then(data => {
+                    departmentChild.innerHTML = '<option value="">---------</option>';
+                    if (data.departments && data.departments.length > 0) {
+                        data.departments.forEach(dept => {
+                            const option = document.createElement('option');
+                            option.value = dept.id;
+                            option.textContent = dept.name;
+                            departmentChild.appendChild(option);
+                        });
+                        if (departmentChildField) departmentChildField.style.display = 'block';
+                    } else {
+                        if (departmentChildField) departmentChildField.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading departments:', error);
+                });
+        }
+        
+        departmentParent.addEventListener('change', function() {
+            loadDepartments(this.value);
+        });
+        
+        // Load departments khi trang load (nếu đã có giá trị)
+        if (departmentParent.value) {
+            loadDepartments(departmentParent.value);
+        }
+    }
+    
+    // Xử lý dropdown phân cấp cho Loại yêu cầu
+    const categoryParent = document.getElementById('id_category_parent');
+    const categoryChild = document.getElementById('id_category');
+    const categoryChildField = document.getElementById('category-child-field');
+    
+    if (categoryParent && categoryChild) {
+        function loadCategories(parentId) {
+            if (!parentId) {
+                if (categoryChildField) categoryChildField.style.display = 'none';
+                categoryChild.innerHTML = '<option value="">---------</option>';
+                return;
+            }
+            
+            fetch(`{% url 'tickets:get_categories' %}?parent_id=${parentId}`)
+                .then(response => response.json())
+                .then(data => {
+                    categoryChild.innerHTML = '<option value="">---------</option>';
+                    if (data.categories && data.categories.length > 0) {
+                        data.categories.forEach(cat => {
+                            const option = document.createElement('option');
+                            option.value = cat.id;
+                            option.textContent = cat.name;
+                            categoryChild.appendChild(option);
+                        });
+                        if (categoryChildField) categoryChildField.style.display = 'block';
+                    } else {
+                        if (categoryChildField) categoryChildField.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading categories:', error);
+                });
+        }
+        
+        categoryParent.addEventListener('change', function() {
+            loadCategories(this.value);
+        });
+        
+        // Load categories khi trang load (nếu đã có giá trị)
+        if (categoryParent.value) {
+            loadCategories(categoryParent.value);
+        }
     }
 });
 </script>

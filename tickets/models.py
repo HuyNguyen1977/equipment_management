@@ -38,12 +38,17 @@ class Department(models.Model):
         related_name='departments',
         verbose_name="Công ty"
     )
+    order = models.IntegerField(
+        default=0,
+        verbose_name="Thứ tự sắp xếp",
+        help_text="Số càng nhỏ càng hiển thị trước. Các item cùng parent sẽ được sắp xếp theo số này."
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Ngày tạo")
 
     class Meta:
         verbose_name = "Phòng ban"
         verbose_name_plural = "Phòng ban"
-        ordering = ['name']
+        ordering = ['order', 'name']
 
     def __str__(self):
         if self.parent:
@@ -63,12 +68,17 @@ class TicketCategory(models.Model):
         verbose_name="Loại cha"
     )
     description = models.TextField(blank=True, verbose_name="Mô tả")
+    order = models.IntegerField(
+        default=0,
+        verbose_name="Thứ tự sắp xếp",
+        help_text="Số càng nhỏ càng hiển thị trước. Các item cùng parent sẽ được sắp xếp theo số này."
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Ngày tạo")
 
     class Meta:
         verbose_name = "Loại yêu cầu"
         verbose_name_plural = "Loại yêu cầu"
-        ordering = ['name']
+        ordering = ['order', 'name']
 
     def __str__(self):
         if self.parent:
@@ -174,6 +184,10 @@ class Ticket(models.Model):
 
     def __str__(self):
         return f"{self.ticket_number} - {self.title}"
+    
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('tickets:ticket_detail', kwargs={'ticket_number': self.ticket_number})
 
     def save(self, *args, **kwargs):
         if not self.ticket_number:

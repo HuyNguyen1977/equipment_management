@@ -1,0 +1,25 @@
+Ticket hỗ trợ IT mới
+
+Có một ticket hỗ trợ IT mới cần được xử lý:
+
+Số ticket: {{ ticket.ticket_number }}
+Tiêu đề: {{ ticket.title }}
+Người yêu cầu: {{ ticket.requester_name }} ({{ ticket.requester_email }})
+{% if ticket.requester_phone %}Số điện thoại: {{ ticket.requester_phone }}{% endif %}
+Công ty: {{ ticket.company.name }}
+{% if ticket.department %}Phòng ban: {{ ticket.department.name }}{% endif %}
+{% if ticket.category %}Loại yêu cầu: {{ ticket.category.name }}{% endif %}
+Mức độ ưu tiên: {{ ticket.get_priority_display }}
+Trạng thái: {{ ticket.get_status_display }}
+Ngày tạo: {{ ticket.created_at|date:"d/m/Y H:i" }}
+
+{% if ticket.description %}
+Mô tả chi tiết:
+{{ ticket.description }}
+{% endif %}
+
+Xem và xử lý ticket: {{ ticket_url }}
+
+---
+Vui lòng xem xét và xử lý ticket này trong thời gian sớm nhất.
+

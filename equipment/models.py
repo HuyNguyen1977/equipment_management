@@ -33,6 +33,8 @@ class Equipment(models.Model):
         ('storage', 'Bộ lưu trữ'),
         ('hardware', 'Phần cứng'),
         ('chamcong', 'Chấm công'),
+        ('camera', 'Camera'),
+        ('daughi', 'Đầu ghi'),
         ('other', 'Khác'),
     ]
     

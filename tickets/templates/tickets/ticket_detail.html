@@ -2,6 +2,71 @@
 
 {% block page_title %}Chi tiết Ticket {{ ticket.ticket_number }}{% endblock %}
 
+{% block extra_css %}
+<style>
+    @media print {
+        /* Ẩn các phần không cần in */
+        .no-print,
+        nav.navbar,
+        .level-right,
+        .card-header-title .icon,
+        button,
+        .button,
+        form,
+        textarea,
+        input,
+        select,
+        .modal,
+        .notification {
+            display: none !important;
+        }
+        
+        /* Hiển thị lại card header title */
+        .card-header-title {
+            display: block !important;
+        }
+        
+        /* Tối ưu layout khi in */
+        .columns {
+            display: block !important;
+        }
+        
+        .column {
+            width: 100% !important;
+            page-break-inside: avoid;
+        }
+        
+        /* Loại bỏ margin/padding không cần thiết */
+        body {
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        
+        .container {
+            max-width: 100% !important;
+            padding: 10px !important;
+        }
+        
+        /* Đảm bảo box và card hiển thị tốt */
+        .box, .card {
+            border: 1px solid #ddd !important;
+            page-break-inside: avoid;
+        }
+        
+        /* In màu cho tags */
+        .tag {
+            border: 1px solid #000 !important;
+        }
+        
+        /* Link không cần underline khi in */
+        a {
+            text-decoration: none !important;
+            color: #000 !important;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="mb-5">
     <div class="level">
@@ -19,6 +84,12 @@
             </div>
         </div>
         <div class="level-right">
+            <button onclick="window.print()" class="button is-light mr-2">
+                <span class="icon">
+                    <i class="fas fa-print"></i>
+                </span>
+                <span>In</span>
+            </button>
             <a href="{% url 'tickets:ticket_list' %}" class="button is-light">
                 <span class="icon">
                     <i class="fas fa-arrow-left"></i>
@@ -76,6 +147,7 @@
             </header>
             <div class="card-content">
                 <!-- Form thêm bình luận -->
+                <div class="no-print">
                 <form method="post" action="{% url 'tickets:ticket_comment' ticket.ticket_number %}">
                     {% csrf_token %}
                     <div class="field">
@@ -107,8 +179,9 @@
                         </div>
                     </div>
                 </form>
+                </div>
 
-                <hr>
+                <hr class="no-print">
 
                 <!-- Danh sách bình luận -->
                 <div class="content">
@@ -275,7 +348,7 @@
 
         <!-- Form cập nhật (chỉ IT) -->
         {% if user.is_staff and update_form %}
-        <div class="card mb-5">
+        <div class="card mb-5 no-print">
             <header class="card-header">
                 <p class="card-header-title">Cập nhật ticket</p>
             </header>
@@ -336,7 +409,7 @@
         {% endif %}
 
         <!-- Upload file -->
-        <div class="card">
+        <div class="card no-print">
             <header class="card-header">
                 <p class="card-header-title">Upload file</p>
             </header>

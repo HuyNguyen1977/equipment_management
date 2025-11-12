@@ -25,7 +25,7 @@
                     </span>
                     <span>Xem lịch sử</span>
                 </a>
-                {% if user.is_authenticated %}
+                {% if user.is_staff %}
                     <a href="{% url 'equipment:equipment_edit' equipment.pk %}" class="button is-warning">
                         <span class="icon">
                             <i class="fas fa-edit"></i>
@@ -45,7 +45,7 @@
 </div>
 
 <!-- Nút nhanh thêm lịch sử -->
-{% if user.is_authenticated %}
+{% if user.is_staff %}
 <div class="card mb-5">
     <header class="card-header">
         <p class="card-header-title">

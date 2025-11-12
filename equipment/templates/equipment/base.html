@@ -32,6 +32,11 @@
         .select2-container--default .select2-selection--single .select2-selection__arrow {
             height: 2.5em;
         }
+        /* Badge notification cho ticket */
+        .navbar-item .tag {
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -54,18 +59,32 @@
                     <i class="fas fa-home mr-2"></i> Trang chủ
                 </a>
                 {% if user.is_authenticated %}
-                    <a class="navbar-item" href="{% url 'equipment:equipment_create' %}">
-                        <i class="fas fa-plus-circle mr-2"></i> Thêm thiết bị
-                    </a>
+                    {% if user.is_staff %}
+                        <a class="navbar-item" href="{% url 'equipment:equipment_create' %}">
+                            <i class="fas fa-plus-circle mr-2"></i> Thêm thiết bị
+                        </a>
+                    {% endif %}
                     <a class="navbar-item" href="{% url 'equipment:report' %}">
                         <i class="fas fa-chart-bar mr-2"></i> Báo cáo
                     </a>
                     <a class="navbar-item" href="{% url 'tickets:ticket_list' %}">
-                        <i class="fas fa-ticket-alt mr-2"></i> Ticket hỗ trợ
+                        <span class="icon-text">
+                            <span class="icon">
+                                <i class="fas fa-ticket-alt"></i>
+                            </span>
+                            <span>Ticket hỗ trợ</span>
+                            {% if new_tickets_count > 0 %}
+                            <span class="tag is-danger is-rounded ml-2" style="font-size: 0.7rem; min-width: 1.5rem; height: 1.5rem; line-height: 1.5rem; padding: 0 0.5rem;">
+                                {{ new_tickets_count }}
+                            </span>
+                            {% endif %}
+                        </span>
                     </a>
-                    <a class="navbar-item" href="{% url 'admin:index' %}">
-                        <i class="fas fa-cog mr-2"></i> Admin
-                    </a>
+                    {% if user.is_staff %}
+                        <a class="navbar-item" href="{% url 'admin:index' %}">
+                            <i class="fas fa-cog mr-2"></i> Admin
+                        </a>
+                    {% endif %}
                     <a class="navbar-item" href="{% url 'equipment:logout' %}">
                         <i class="fas fa-sign-out-alt mr-2"></i> Đăng xuất ({{ user.username }})
                     </a>

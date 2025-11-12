@@ -7,6 +7,9 @@ from django.core.paginator import Paginator
 from django.utils import timezone
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.core.mail import send_mail, EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.conf import settings
 from datetime import datetime, timedelta
 from .models import Ticket, TicketComment, TicketAttachment, Company, Department, TicketCategory
 from .forms import TicketForm, TicketUpdateForm, TicketCommentForm, TicketAttachmentForm
@@ -40,6 +43,15 @@ def ticket_create(request):
             
             ticket.repeat_count = similar_tickets.count()
             ticket.save()
+            
+            # Gửi email thông báo
+            try:
+                send_ticket_emails(ticket, request)
+            except Exception as e:
+                # Log lỗi nhưng không làm gián đoạn quá trình tạo ticket
+                import logging
+                logger = logging.getLogger('tickets')
+                logger.error(f'Error sending ticket emails: {str(e)}')
             
             messages.success(
                 request,
@@ -138,7 +150,7 @@ def ticket_list(request):
         'tickets': page_obj,
         'stats': stats,
         'companies': Company.objects.all().order_by('name'),
-        'categories': TicketCategory.objects.filter(parent__isnull=False).order_by('name'),
+        'categories': TicketCategory.objects.filter(parent__isnull=False).order_by('order', 'name'),
         'selected_status': status,
         'selected_priority': priority,
         'selected_company': company_id,
@@ -306,6 +318,36 @@ def search_users(request):
     return JsonResponse({'users': results})
 
 
+@require_http_methods(["GET"])
+def get_departments(request):
+    """AJAX endpoint để lấy danh sách departments con theo parent"""
+    parent_id = request.GET.get('parent_id')
+    if not parent_id:
+        return JsonResponse({'departments': []})
+    
+    try:
+        departments = Department.objects.filter(parent_id=parent_id).order_by('order', 'name')
+        results = [{'id': dept.id, 'name': dept.name} for dept in departments]
+        return JsonResponse({'departments': results})
+    except Exception as e:
+        return JsonResponse({'departments': [], 'error': str(e)})
+
+
+@require_http_methods(["GET"])
+def get_categories(request):
+    """AJAX endpoint để lấy danh sách categories con theo parent"""
+    parent_id = request.GET.get('parent_id')
+    if not parent_id:
+        return JsonResponse({'categories': []})
+    
+    try:
+        categories = TicketCategory.objects.filter(parent_id=parent_id).order_by('order', 'name')
+        results = [{'id': cat.id, 'name': cat.name} for cat in categories]
+        return JsonResponse({'categories': results})
+    except Exception as e:
+        return JsonResponse({'categories': [], 'error': str(e)})
+
+
 @login_required
 @require_http_methods(["POST"])
 def create_user_quick(request):
@@ -371,3 +413,82 @@ def create_user_quick(request):
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+def send_ticket_emails(ticket, request):
+    """Gửi email thông báo khi tạo ticket mới"""
+    # Tạo URL cho ticket
+    ticket_url = request.build_absolute_uri(ticket.get_absolute_url())
+    
+    # 1. Gửi email cho người yêu cầu
+    if ticket.requester_email:
+        subject_requester = f'[Ticket {ticket.ticket_number}] Yêu cầu hỗ trợ IT đã được tiếp nhận'
+        
+        # Render email template
+        html_message_requester = render_to_string(
+            'tickets/emails/ticket_created_requester.html',
+            {
+                'ticket': ticket,
+                'ticket_url': ticket_url,
+            }
+        )
+        text_message_requester = render_to_string(
+            'tickets/emails/ticket_created_requester.txt',
+            {
+                'ticket': ticket,
+                'ticket_url': ticket_url,
+            }
+        )
+        
+        try:
+            msg_requester = EmailMultiAlternatives(
+                subject=subject_requester,
+                body=text_message_requester,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[ticket.requester_email],
+            )
+            msg_requester.attach_alternative(html_message_requester, "text/html")
+            msg_requester.send()
+        except Exception as e:
+            import logging
+            logger = logging.getLogger('tickets')
+            logger.error(f'Error sending email to requester {ticket.requester_email}: {str(e)}')
+    
+    # 2. Gửi email cho tất cả staff members
+    staff_users = User.objects.filter(is_staff=True, is_active=True, email__isnull=False).exclude(email='')
+    
+    if staff_users.exists():
+        subject_staff = f'[Ticket {ticket.ticket_number}] Ticket hỗ trợ IT mới - {ticket.title}'
+        
+        # Render email template
+        html_message_staff = render_to_string(
+            'tickets/emails/ticket_created_staff.html',
+            {
+                'ticket': ticket,
+                'ticket_url': ticket_url,
+            }
+        )
+        text_message_staff = render_to_string(
+            'tickets/emails/ticket_created_staff.txt',
+            {
+                'ticket': ticket,
+                'ticket_url': ticket_url,
+            }
+        )
+        
+        # Gửi email cho từng staff member
+        staff_emails = [user.email for user in staff_users]
+        
+        try:
+            msg_staff = EmailMultiAlternatives(
+                subject=subject_staff,
+                body=text_message_staff,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=staff_emails,
+            )
+            msg_staff.attach_alternative(html_message_staff, "text/html")
+            msg_staff.send()
+        except Exception as e:
+            import logging
+            logger = logging.getLogger('tickets')
+            logger.error(f'Error sending email to staff: {str(e)}')

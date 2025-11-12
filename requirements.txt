@@ -1,3 +1,6 @@
-Django
+Django>=4.2.0
 Pillow
 openpyxl
+gunicorn
+psycopg2-binary
+python-decouple

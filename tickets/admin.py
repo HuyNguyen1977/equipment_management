@@ -11,18 +11,22 @@ class CompanyAdmin(admin.ModelAdmin):
 
 @admin.register(Department)
 class DepartmentAdmin(admin.ModelAdmin):
-    list_display = ['name', 'parent', 'company', 'created_at']
+    list_display = ['name', 'parent', 'company', 'order', 'created_at']
     list_filter = ['company', 'parent', 'created_at']
     search_fields = ['name']
     raw_id_fields = ['parent', 'company']
+    list_editable = ['order']
+    ordering = ['order', 'name']
 
 
 @admin.register(TicketCategory)
 class TicketCategoryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'parent', 'created_at']
+    list_display = ['name', 'parent', 'order', 'created_at']
     list_filter = ['parent', 'created_at']
     search_fields = ['name']
     raw_id_fields = ['parent']
+    list_editable = ['order']
+    ordering = ['order', 'name']
 
 
 @admin.register(Ticket)

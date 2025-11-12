@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
 from django.db.models import Q, Count, Exists, OuterRef
@@ -277,6 +278,7 @@ def get_next_code(request):
 
 
 @login_required
+@staff_member_required
 def equipment_create(request):
     """Tạo mới thiết bị"""
     if request.method == 'POST':
@@ -307,6 +309,7 @@ def equipment_create(request):
 
 
 @login_required
+@staff_member_required
 def equipment_edit(request, pk):
     """Chỉnh sửa thiết bị"""
     equipment = get_object_or_404(Equipment, pk=pk)
@@ -362,6 +365,7 @@ def equipment_edit(request, pk):
 
 
 @login_required
+@staff_member_required
 def equipment_delete(request, pk):
     """Xóa thiết bị"""
     equipment = get_object_or_404(Equipment, pk=pk)
@@ -391,6 +395,7 @@ def equipment_history(request, pk):
 
 
 @login_required
+@staff_member_required
 def history_add(request, equipment_pk):
     """Thêm lịch sử cho thiết bị"""
     equipment = get_object_or_404(Equipment, pk=equipment_pk)
@@ -475,6 +480,7 @@ def history_add(request, equipment_pk):
 
 
 @login_required
+@staff_member_required
 def history_edit(request, pk):
     """Chỉnh sửa lịch sử thiết bị"""
     history = get_object_or_404(EquipmentHistory, pk=pk)
@@ -561,6 +567,7 @@ def history_edit(request, pk):
 
 
 @login_required
+@staff_member_required
 def history_delete(request, pk):
     """Xóa lịch sử thiết bị"""
     history = get_object_or_404(EquipmentHistory, pk=pk)

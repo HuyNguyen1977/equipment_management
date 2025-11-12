@@ -34,17 +34,29 @@ class TicketForm(forms.ModelForm):
         label="Công ty",
         widget=forms.Select(attrs={'class': 'select is-fullwidth'})
     )
-    department = forms.ModelChoiceField(
-        queryset=Department.objects.all(),
+    department_parent = forms.ModelChoiceField(
+        queryset=Department.objects.filter(parent__isnull=True),
         required=False,
         label="Phòng ban",
-        widget=forms.Select(attrs={'class': 'select is-fullwidth'})
+        widget=forms.Select(attrs={'class': 'select is-fullwidth', 'id': 'id_department_parent'})
     )
-    category = forms.ModelChoiceField(
-        queryset=TicketCategory.objects.filter(parent__isnull=False),
+    department = forms.ModelChoiceField(
+        queryset=Department.objects.all(),  # Cho phép tất cả để tránh lỗi validation
+        required=False,
+        label="",
+        widget=forms.Select(attrs={'class': 'select is-fullwidth', 'id': 'id_department'})
+    )
+    category_parent = forms.ModelChoiceField(
+        queryset=TicketCategory.objects.filter(parent__isnull=True),
         required=False,
         label="Loại yêu cầu",
-        widget=forms.Select(attrs={'class': 'select is-fullwidth'})
+        widget=forms.Select(attrs={'class': 'select is-fullwidth', 'id': 'id_category_parent'})
+    )
+    category = forms.ModelChoiceField(
+        queryset=TicketCategory.objects.all(),  # Cho phép tất cả để tránh lỗi validation
+        required=False,
+        label="",
+        widget=forms.Select(attrs={'class': 'select is-fullwidth', 'id': 'id_category'})
     )
     priority = forms.ChoiceField(
         choices=Ticket.PRIORITY_CHOICES,
@@ -81,21 +93,116 @@ class TicketForm(forms.ModelForm):
         model = Ticket
         fields = [
             'requester_name', 'requester_email', 'requester_phone',
-            'company', 'department', 'category', 'priority',
+            'company', 'department_parent', 'department', 'category_parent', 'category', 'priority',
             'title', 'description'
         ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Chỉ hiển thị các category con (không hiển thị category cha)
-        self.fields['category'].queryset = TicketCategory.objects.filter(parent__isnull=False)
         
-        # Sắp xếp theo tên
+        # Sắp xếp theo order và tên
         self.fields['company'].queryset = Company.objects.all().order_by('name')
-        self.fields['department'].queryset = Department.objects.all().order_by('name')
+        self.fields['department_parent'].queryset = Department.objects.filter(parent__isnull=True).order_by('order', 'name')
+        self.fields['category_parent'].queryset = TicketCategory.objects.filter(parent__isnull=True).order_by('order', 'name')
+        
+        # Nếu có instance (edit mode), load department và category con
+        if self.instance and self.instance.pk:
+            if self.instance.department:
+                if self.instance.department.parent:
+                    # Department có parent, set parent và load các con
+                    self.fields['department_parent'].initial = self.instance.department.parent.id
+                    self.fields['department'].queryset = Department.objects.filter(
+                        parent=self.instance.department.parent
+                    ).order_by('order', 'name')
+                    self.fields['department'].initial = self.instance.department.id
+                else:
+                    # Department là parent, chỉ set parent
+                    self.fields['department_parent'].initial = self.instance.department.id
+                    self.fields['department'].queryset = Department.objects.filter(
+                        parent=self.instance.department
+                    ).order_by('order', 'name')
+            
+            if self.instance.category:
+                if self.instance.category.parent:
+                    # Category có parent, set parent và load các con
+                    self.fields['category_parent'].initial = self.instance.category.parent.id
+                    self.fields['category'].queryset = TicketCategory.objects.filter(
+                        parent=self.instance.category.parent
+                    ).order_by('order', 'name')
+                    self.fields['category'].initial = self.instance.category.id
+                else:
+                    # Category là parent, chỉ set parent
+                    self.fields['category_parent'].initial = self.instance.category.id
+                    self.fields['category'].queryset = TicketCategory.objects.filter(
+                        parent=self.instance.category
+                    ).order_by('order', 'name')
 
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        # Lấy department từ department field (con) hoặc department_parent nếu không có con
+        department = cleaned_data.get('department')
+        department_parent = cleaned_data.get('department_parent')
+        
+        if not department and department_parent:
+            # Nếu chọn parent nhưng không có con, dùng parent làm department
+            department = department_parent
+        
+        # Validate department nếu có
+        if department:
+            # Nếu department có parent, phải có department_parent và phải khớp
+            if department.parent:
+                if not department_parent:
+                    # Nếu chọn department con nhưng không chọn parent, tự động set parent
+                    department_parent = department.parent
+                    cleaned_data['department_parent'] = department_parent
+                elif department.parent != department_parent:
+                    raise forms.ValidationError({
+                        'department': 'Phòng ban được chọn không hợp lệ với phòng ban cha.'
+                    })
+            # Nếu department không có parent nhưng có department_parent được chọn
+            elif department_parent and department != department_parent:
+                raise forms.ValidationError({
+                    'department': 'Phòng ban được chọn không hợp lệ với phòng ban cha.'
+                })
+        
+        # Lấy category từ category field (con) hoặc category_parent nếu không có con
+        category = cleaned_data.get('category')
+        category_parent = cleaned_data.get('category_parent')
+        
+        if not category and category_parent:
+            # Nếu chọn parent nhưng không có con, dùng parent làm category
+            category = category_parent
+        
+        # Validate category nếu có
+        if category:
+            # Nếu category có parent, phải có category_parent và phải khớp
+            if category.parent:
+                if not category_parent:
+                    # Nếu chọn category con nhưng không chọn parent, tự động set parent
+                    category_parent = category.parent
+                    cleaned_data['category_parent'] = category_parent
+                elif category.parent != category_parent:
+                    raise forms.ValidationError({
+                        'category': 'Loại yêu cầu được chọn không hợp lệ với loại yêu cầu cha.'
+                    })
+            # Nếu category không có parent nhưng có category_parent được chọn
+            elif category_parent and category != category_parent:
+                raise forms.ValidationError({
+                    'category': 'Loại yêu cầu được chọn không hợp lệ với loại yêu cầu cha.'
+                })
+        
+        cleaned_data['department'] = department
+        cleaned_data['category'] = category
+        return cleaned_data
+    
     def save(self, commit=True):
         ticket = super().save(commit=False)
+        
+        # Set department và category từ cleaned_data
+        ticket.department = self.cleaned_data.get('department')
+        ticket.category = self.cleaned_data.get('category')
+        
         # Tìm hoặc tạo user từ email
         email = self.cleaned_data['requester_email']
         try:

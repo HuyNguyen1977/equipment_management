@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+        }
+        .ticket-info {
+            background-color: white;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #4CAF50;
+        }
+        .ticket-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+            margin: 10px 0;
+        }
+        .info-row {
+            margin: 10px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .info-label {
+            font-weight: bold;
+            display: inline-block;
+            width: 150px;
+        }
+        .footer {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Yêu cầu hỗ trợ IT đã được tiếp nhận</h1>
+    </div>
+    
+    <div class="content">
+        <p>Xin chào <strong>{{ ticket.requester_name }}</strong>,</p>
+        
+        <p>Yêu cầu hỗ trợ IT của bạn đã được tiếp nhận thành công. Thông tin chi tiết như sau:</p>
+        
+        <div class="ticket-info">
+            <div class="ticket-number">{{ ticket.ticket_number }}</div>
+            
+            <div class="info-row">
+                <span class="info-label">Tiêu đề:</span>
+                <span>{{ ticket.title }}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Công ty:</span>
+                <span>{{ ticket.company.name }}</span>
+            </div>
+            
+            {% if ticket.department %}
+            <div class="info-row">
+                <span class="info-label">Phòng ban:</span>
+                <span>{{ ticket.department.name }}</span>
+            </div>
+            {% endif %}
+            
+            {% if ticket.category %}
+            <div class="info-row">
+                <span class="info-label">Loại yêu cầu:</span>
+                <span>{{ ticket.category.name }}</span>
+            </div>
+            {% endif %}
+            
+            <div class="info-row">
+                <span class="info-label">Mức độ ưu tiên:</span>
+                <span>{{ ticket.get_priority_display }}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Trạng thái:</span>
+                <span>{{ ticket.get_status_display }}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Ngày tạo:</span>
+                <span>{{ ticket.created_at|date:"d/m/Y H:i" }}</span>
+            </div>
+        </div>
+        
+        {% if ticket.description %}
+        <div style="margin: 20px 0;">
+            <strong>Mô tả chi tiết:</strong>
+            <div style="background-color: white; padding: 15px; margin-top: 10px; border-radius: 5px;">
+                {{ ticket.description|linebreaks }}
+            </div>
+        </div>
+        {% endif %}
+        
+        <p>Bộ phận IT sẽ xem xét và xử lý yêu cầu của bạn trong thời gian sớm nhất. Bạn sẽ nhận được thông báo khi có cập nhật về ticket này.</p>
+        
+        <p style="text-align: center;">
+            <a href="{{ ticket_url }}" class="button">Xem chi tiết ticket</a>
+        </p>
+        
+        <div class="footer">
+            <p>Đây là email tự động, vui lòng không trả lời email này.</p>
+            <p>Nếu có thắc mắc, vui lòng liên hệ bộ phận IT hoặc truy cập hệ thống để xem chi tiết ticket.</p>
+        </div>
+    </div>
+</body>
+</html>
+
