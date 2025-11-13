@@ -1,0 +1,297 @@
+{% extends 'renewals/base.html' %}
+
+{% block page_title %}Danh sách Gia hạn Dịch vụ{% endblock %}
+
+{% block content %}
+<div class="mb-5">
+    <div class="level">
+        <div class="level-left">
+            <div>
+                <h1 class="title is-3">
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="fas fa-sync-alt"></i>
+                        </span>
+                        <span>Danh sách Gia hạn Dịch vụ</span>
+                    </span>
+                </h1>
+                <p class="subtitle">Quản lý thông tin gia hạn Email, Server, Domain và các ứng dụng</p>
+            </div>
+        </div>
+        <div class="level-right">
+            {% if user.is_staff %}
+            <a href="{% url 'renewals:renewal_create' %}" class="button is-success is-large">
+                <span class="icon">
+                    <i class="fas fa-plus-circle"></i>
+                </span>
+                <span>Thêm dịch vụ</span>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Thống kê -->
+<div class="columns mb-5">
+    <div class="column">
+        <div class="card" style="background: linear-gradient(135deg, var(--brown-lightest) 0%, var(--brown-lighter) 100%);">
+            <div class="card-content">
+                <p class="heading">Tổng số</p>
+                <p class="title is-3">{{ total_count }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="column">
+        <div class="card" style="background: linear-gradient(135deg, var(--brown-lightest) 0%, var(--brown-lighter) 100%);">
+            <div class="card-content">
+                <p class="heading">Đang hoạt động</p>
+                <p class="title is-3">{{ active_count }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="column">
+        <div class="card" style="background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);">
+            <div class="card-content">
+                <p class="heading">Sắp hết hạn</p>
+                <p class="title is-3 has-text-danger">{{ expiring_soon_count }}</p>
+                <p class="help">Trong 30 ngày tới</p>
+            </div>
+        </div>
+    </div>
+    <div class="column">
+        <div class="card" style="background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%);">
+            <div class="card-content">
+                <p class="heading">Đã hết hạn</p>
+                <p class="title is-3 has-text-danger">{{ expired_count }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-5">
+    <div class="card-content">
+        <form method="get">
+            <div class="columns">
+                <div class="column is-one-quarter">
+                    <div class="field">
+                        <label class="label">Loại dịch vụ</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="type">
+                                    <option value="">Tất cả</option>
+                                    {% for type in renewal_types %}
+                                        <option value="{{ type.id }}" {% if selected_type == type.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ type.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-one-quarter">
+                    <div class="field">
+                        <label class="label">Trạng thái</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="status">
+                                    <option value="">Tất cả</option>
+                                    <option value="active" {% if selected_status == "active" %}selected{% endif %}>Đang hoạt động</option>
+                                    <option value="expired" {% if selected_status == "expired" %}selected{% endif %}>Đã hết hạn</option>
+                                    <option value="cancelled" {% if selected_status == "cancelled" %}selected{% endif %}>Đã hủy</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Tìm kiếm</label>
+                        <div class="control">
+                            <input type="text" name="search" class="input" placeholder="Tên dịch vụ, nhà cung cấp..." value="{% if search_query %}{{ search_query }}{% endif %}">
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-narrow">
+                    <div class="field">
+                        <label class="label">&nbsp;</label>
+                        <div class="control">
+                            <button type="submit" class="button is-primary">
+                                <span class="icon">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <span>Tìm</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="field">
+                <label class="checkbox">
+                    <input type="checkbox" name="expiring_soon" value="true" {% if expiring_soon %}checked{% endif %}>
+                    Chỉ hiển thị dịch vụ sắp hết hạn (30 ngày)
+                </label>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Renewal List -->
+<div class="card">
+    <header class="card-header">
+        <p class="card-header-title">
+            <span class="icon-text">
+                <span class="icon">
+                    <i class="fas fa-list"></i>
+                </span>
+                <span>Danh sách ({{ page_obj.paginator.count }})</span>
+            </span>
+        </p>
+    </header>
+    <div class="card-content" style="padding: 0;">
+        {% if page_obj %}
+            <div class="table-container">
+                <table class="table is-fullwidth is-hoverable mb-0">
+                    <thead>
+                        <tr>
+                            <th>Tên dịch vụ</th>
+                            <th>Loại</th>
+                            <th>Công ty</th>
+                            <th>Ngày hết hạn</th>
+                            <th>Còn lại</th>
+                            <th>Nhà cung cấp</th>
+                            <th>Chi phí</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for renewal in page_obj %}
+                            <tr>
+                                <td>
+                                    <strong>{{ renewal.name }}</strong>
+                                    {% if renewal.description %}
+                                        <br><small class="has-text-grey">{{ renewal.description|truncatewords:10 }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="tag is-info">{{ renewal.renewal_type.name }}</span>
+                                </td>
+                                <td>
+                                    {% if renewal.company %}
+                                        {{ renewal.company.name }}
+                                    {% else %}
+                                        <span class="has-text-grey">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ renewal.expiry_date|date:"d/m/Y" }}
+                                </td>
+                                <td>
+                                    {% if renewal.is_expired %}
+                                        <span class="tag is-danger">Đã hết hạn</span>
+                                    {% elif renewal.is_critical %}
+                                        <span class="tag is-danger">{{ renewal.days_until_expiry }} ngày</span>
+                                    {% elif renewal.is_expiring_soon %}
+                                        <span class="tag is-warning">{{ renewal.days_until_expiry }} ngày</span>
+                                    {% else %}
+                                        <span class="tag is-success">{{ renewal.days_until_expiry }} ngày</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if renewal.provider %}
+                                        {{ renewal.provider }}
+                                    {% else %}
+                                        <span class="has-text-grey">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if renewal.cost %}
+                                        {{ renewal.cost|floatformat:0 }} VND
+                                    {% else %}
+                                        <span class="has-text-grey">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if renewal.status == 'active' %}
+                                        <span class="tag is-success">Hoạt động</span>
+                                    {% elif renewal.status == 'expired' %}
+                                        <span class="tag is-danger">Hết hạn</span>
+                                    {% else %}
+                                        <span class="tag is-light">Đã hủy</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="buttons">
+                                        <a href="{% url 'renewals:renewal_detail' renewal.pk %}" class="button is-small is-outlined is-primary" title="Chi tiết">
+                                            <span class="icon">
+                                                <i class="fas fa-eye"></i>
+                                            </span>
+                                        </a>
+                                        {% if user.is_staff %}
+                                            <a href="{% url 'renewals:renewal_renew' renewal.pk %}" class="button is-small is-outlined is-success" title="Gia hạn">
+                                                <span class="icon">
+                                                    <i class="fas fa-sync-alt"></i>
+                                                </span>
+                                            </a>
+                                            <a href="{% url 'renewals:renewal_edit' renewal.pk %}" class="button is-small is-outlined is-warning" title="Sửa">
+                                                <span class="icon">
+                                                    <i class="fas fa-edit"></i>
+                                                </span>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <div class="card-footer">
+                <div class="card-footer-item">
+                    <nav class="pagination is-centered" role="navigation" aria-label="pagination">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if expiring_soon %}&expiring_soon=true{% endif %}" class="pagination-previous">Trước</a>
+                        {% else %}
+                            <a class="pagination-previous" disabled>Trước</a>
+                        {% endif %}
+                        
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_type %}&type={{ selected_type }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if expiring_soon %}&expiring_soon=true{% endif %}" class="pagination-next">Sau</a>
+                        {% else %}
+                            <a class="pagination-next" disabled>Sau</a>
+                        {% endif %}
+                        
+                        <ul class="pagination-list">
+                            <li>
+                                <span class="pagination-ellipsis">Trang {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="has-text-centered" style="padding: 3rem;">
+                <span class="icon is-large has-text-grey-light">
+                    <i class="fas fa-inbox fa-3x"></i>
+                </span>
+                <p class="has-text-grey mt-4">Không có dịch vụ nào</p>
+                {% if user.is_staff %}
+                    <a href="{% url 'renewals:renewal_create' %}" class="button is-primary mt-4">
+                        <span class="icon">
+                            <i class="fas fa-plus-circle"></i>
+                        </span>
+                        <span>Thêm dịch vụ đầu tiên</span>
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

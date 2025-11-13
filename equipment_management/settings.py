@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'equipment',
     'tickets',
+    'renewals',
 ]
 
 MIDDLEWARE = [
@@ -66,6 +67,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'tickets.context_processors.ticket_notifications',
+                'renewals.context_processors.renewal_notifications',
             ],
         },
     },

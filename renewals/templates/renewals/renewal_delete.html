@@ -1,0 +1,51 @@
+{% extends 'renewals/base.html' %}
+
+{% block page_title %}Xóa dịch vụ: {{ renewal.name }}{% endblock %}
+
+{% block content %}
+<div class="columns is-centered">
+    <div class="column is-6">
+        <div class="card">
+            <header class="card-header">
+                <p class="card-header-title has-text-danger">
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </span>
+                        <span>Xác nhận xóa</span>
+                    </span>
+                </p>
+            </header>
+            <div class="card-content">
+                <p class="mb-4">Bạn có chắc chắn muốn xóa dịch vụ gia hạn này không?</p>
+                <div class="box">
+                    <p><strong>Tên:</strong> {{ renewal.name }}</p>
+                    <p><strong>Loại:</strong> {{ renewal.renewal_type.name }}</p>
+                    <p><strong>Ngày hết hạn:</strong> {{ renewal.expiry_date|date:"d/m/Y" }}</p>
+                </div>
+                <p class="has-text-danger mb-4"><strong>Lưu ý:</strong> Hành động này không thể hoàn tác!</p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="field is-grouped">
+                        <div class="control">
+                            <button type="submit" class="button is-danger">
+                                <span class="icon">
+                                    <i class="fas fa-trash"></i>
+                                </span>
+                                <span>Xóa</span>
+                            </button>
+                        </div>
+                        <div class="control">
+                            <a href="{% url 'renewals:renewal_detail' renewal.pk %}" class="button is-light">
+                                Hủy
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

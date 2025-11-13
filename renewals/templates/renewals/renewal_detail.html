@@ -1,0 +1,238 @@
+{% extends 'renewals/base.html' %}
+
+{% block page_title %}Chi tiết: {{ renewal.name }}{% endblock %}
+
+{% block content %}
+<div class="mb-5">
+    <div class="level">
+        <div class="level-left">
+            <div>
+                <h1 class="title is-3">{{ renewal.name }}</h1>
+                <p class="subtitle">{{ renewal.renewal_type.name }}</p>
+            </div>
+        </div>
+        <div class="level-right">
+            <div class="buttons">
+                <a href="{% url 'renewals:renewal_list' %}" class="button is-light">
+                    <span class="icon">
+                        <i class="fas fa-arrow-left"></i>
+                    </span>
+                    <span>Quay lại</span>
+                </a>
+                {% if user.is_staff %}
+                    <a href="{% url 'renewals:renewal_renew' renewal.pk %}" class="button is-success">
+                        <span class="icon">
+                            <i class="fas fa-sync-alt"></i>
+                        </span>
+                        <span>Gia hạn</span>
+                    </a>
+                    <a href="{% url 'renewals:renewal_edit' renewal.pk %}" class="button is-warning">
+                        <span class="icon">
+                            <i class="fas fa-edit"></i>
+                        </span>
+                        <span>Sửa</span>
+                    </a>
+                    <a href="{% url 'renewals:renewal_delete' renewal.pk %}" class="button is-danger">
+                        <span class="icon">
+                            <i class="fas fa-trash"></i>
+                        </span>
+                        <span>Xóa</span>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="columns">
+    <div class="column is-two-thirds">
+        <!-- Thông tin chính -->
+        <div class="card mb-5">
+            <header class="card-header">
+                <p class="card-header-title">Thông tin dịch vụ</p>
+            </header>
+            <div class="card-content">
+                <table class="table is-fullwidth">
+                    <tbody>
+                        <tr>
+                            <td><strong>Loại dịch vụ:</strong></td>
+                            <td><span class="tag is-info">{{ renewal.renewal_type.name }}</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Công ty:</strong></td>
+                            <td>{% if renewal.company %}{{ renewal.company.name }}{% else %}<span class="has-text-grey">-</span>{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Mô tả:</strong></td>
+                            <td>{% if renewal.description %}{{ renewal.description|linebreaks }}{% else %}<span class="has-text-grey">-</span>{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ngày bắt đầu:</strong></td>
+                            <td>{{ renewal.start_date|date:"d/m/Y" }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ngày hết hạn:</strong></td>
+                            <td>
+                                <strong class="{% if renewal.is_expired %}has-text-danger{% elif renewal.is_critical %}has-text-danger{% elif renewal.is_expiring_soon %}has-text-warning{% else %}has-text-success{% endif %}">
+                                    {{ renewal.expiry_date|date:"d/m/Y" }}
+                                </strong>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Còn lại:</strong></td>
+                            <td>
+                                {% if renewal.is_expired %}
+                                    <span class="tag is-danger">Đã hết hạn</span>
+                                {% elif renewal.is_critical %}
+                                    <span class="tag is-danger">{{ renewal.days_until_expiry }} ngày</span>
+                                {% elif renewal.is_expiring_soon %}
+                                    <span class="tag is-warning">{{ renewal.days_until_expiry }} ngày</span>
+                                {% else %}
+                                    <span class="tag is-success">{{ renewal.days_until_expiry }} ngày</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Chu kỳ gia hạn:</strong></td>
+                            <td>{{ renewal.renewal_period }} tháng</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Chi phí:</strong></td>
+                            <td>{% if renewal.cost %}{{ renewal.cost|floatformat:0 }} VND{% else %}<span class="has-text-grey">-</span>{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Trạng thái:</strong></td>
+                            <td>
+                                {% if renewal.status == 'active' %}
+                                    <span class="tag is-success">Đang hoạt động</span>
+                                {% elif renewal.status == 'expired' %}
+                                    <span class="tag is-danger">Đã hết hạn</span>
+                                {% else %}
+                                    <span class="tag is-light">Đã hủy</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tự động gia hạn:</strong></td>
+                            <td>{% if renewal.auto_renewal %}<span class="tag is-success">Có</span>{% else %}<span class="tag is-light">Không</span>{% endif %}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Nhà cung cấp -->
+        {% if renewal.provider %}
+        <div class="card mb-5">
+            <header class="card-header">
+                <p class="card-header-title">Nhà cung cấp</p>
+            </header>
+            <div class="card-content">
+                <table class="table is-fullwidth">
+                    <tbody>
+                        <tr>
+                            <td><strong>Tên:</strong></td>
+                            <td>{{ renewal.provider }}</td>
+                        </tr>
+                        {% if renewal.provider_contact %}
+                        <tr>
+                            <td><strong>Liên hệ:</strong></td>
+                            <td>{{ renewal.provider_contact }}</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Ghi chú -->
+        {% if renewal.notes %}
+        <div class="card mb-5">
+            <header class="card-header">
+                <p class="card-header-title">Ghi chú</p>
+            </header>
+            <div class="card-content">
+                {{ renewal.notes|linebreaks }}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="column is-one-third">
+        <!-- Thông tin quản lý -->
+        <div class="card mb-5">
+            <header class="card-header">
+                <p class="card-header-title">Thông tin quản lý</p>
+            </header>
+            <div class="card-content">
+                <table class="table is-fullwidth">
+                    <tbody>
+                        <tr>
+                            <td><strong>Người phụ trách:</strong></td>
+                            <td>{% if renewal.responsible_person %}{{ renewal.responsible_person.get_full_name|default:renewal.responsible_person.username }}{% else %}<span class="has-text-grey">-</span>{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Người tạo:</strong></td>
+                            <td>{% if renewal.created_by %}{{ renewal.created_by.get_full_name|default:renewal.created_by.username }}{% else %}<span class="has-text-grey">-</span>{% endif %}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ngày tạo:</strong></td>
+                            <td>{{ renewal.created_at|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Cập nhật:</strong></td>
+                            <td>{{ renewal.updated_at|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lịch sử gia hạn -->
+<div class="card">
+    <header class="card-header">
+        <p class="card-header-title">Lịch sử gia hạn</p>
+    </header>
+    <div class="card-content" style="padding: 0;">
+        {% if history %}
+            <div class="table-container">
+                <table class="table is-fullwidth is-hoverable mb-0">
+                    <thead>
+                        <tr>
+                            <th>Ngày gia hạn</th>
+                            <th>Hết hạn cũ</th>
+                            <th>Hết hạn mới</th>
+                            <th>Chi phí</th>
+                            <th>Người gia hạn</th>
+                            <th>Ghi chú</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for h in history %}
+                            <tr>
+                                <td>{{ h.renewal_date|date:"d/m/Y" }}</td>
+                                <td>{{ h.old_expiry_date|date:"d/m/Y" }}</td>
+                                <td><strong>{{ h.new_expiry_date|date:"d/m/Y" }}</strong></td>
+                                <td>{% if h.cost %}{{ h.cost|floatformat:0 }} VND{% else %}<span class="has-text-grey">-</span>{% endif %}</td>
+                                <td>{% if h.renewed_by %}{{ h.renewed_by.get_full_name|default:h.renewed_by.username }}{% else %}<span class="has-text-grey">-</span>{% endif %}</td>
+                                <td>{% if h.notes %}{{ h.notes|truncatewords:10 }}{% else %}<span class="has-text-grey">-</span>{% endif %}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="has-text-centered" style="padding: 2rem;">
+                <span class="icon is-large has-text-grey-light">
+                    <i class="fas fa-history fa-2x"></i>
+                </span>
+                <p class="has-text-grey mt-4">Chưa có lịch sử gia hạn</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

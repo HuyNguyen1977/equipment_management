@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
     <!-- Font Awesome cho icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS Override - Phải load sau Bulma -->
     <!-- jQuery và Select2 cho autocomplete -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
@@ -36,6 +37,289 @@
         .navbar-item .tag {
             margin-left: 0.5rem;
             vertical-align: middle;
+        }
+        
+        /* Bảng màu nâu đất với nhiều sắc độ để tạo độ tương phản đẹp mắt */
+        :root {
+            --brown-darkest: #3E2723;     /* Darkest brown cho text đậm */
+            --brown-dark: #5D4037;        /* Dark brown cho navbar */
+            --brown-medium-dark: #6D4C41; /* Medium-dark brown cho buttons hover */
+            --brown-medium: #8D6E63;     /* Medium brown cho buttons và tags */
+            --brown-medium-light: #A1887F; /* Medium-light brown cho accents */
+            --brown-light: #BCAAA4;       /* Light brown cho borders */
+            --brown-lighter: #D7CCC8;     /* Lighter brown cho backgrounds */
+            --brown-lightest: #EFEBE9;    /* Lightest brown cho card backgrounds */
+            --brown-cream: #F5F1ED;      /* Cream brown cho body background */
+            --brown-text: #3E2723;        /* Dark brown cho text */
+            --brown-text-light: #5D4037;  /* Lighter brown cho text phụ */
+        }
+        
+        /* Navbar màu nâu đậm */
+        .navbar.is-primary {
+            background: linear-gradient(135deg, var(--brown-dark) 0%, var(--brown-medium-dark) 100%) !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .navbar.is-primary .navbar-brand > .navbar-item,
+        .navbar.is-primary .navbar-menu .navbar-item {
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+        
+        .navbar.is-primary .navbar-menu .navbar-item:hover,
+        .navbar.is-primary .navbar-menu .navbar-item.is-active {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+        }
+        
+        .navbar.is-primary .navbar-burger span {
+            background-color: #fff;
+        }
+        
+        /* Buttons màu nâu với gradient và shadow */
+        .button.is-primary,
+        .button.is-primary:focus {
+            background: linear-gradient(135deg, var(--brown-medium) 0%, var(--brown-medium-dark) 100%);
+            border-color: var(--brown-medium-dark);
+            color: #fff;
+            box-shadow: 0 2px 4px rgba(93, 64, 55, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .button.is-primary:hover {
+            background: linear-gradient(135deg, var(--brown-medium-dark) 0%, var(--brown-dark) 100%);
+            border-color: var(--brown-dark);
+            box-shadow: 0 4px 8px rgba(93, 64, 55, 0.4);
+            transform: translateY(-1px);
+        }
+        
+        .button.is-primary.is-outlined {
+            background-color: transparent;
+            border-color: var(--brown-medium);
+            color: var(--brown-medium);
+            border-width: 2px;
+        }
+        
+        .button.is-primary.is-outlined:hover {
+            background: linear-gradient(135deg, var(--brown-medium) 0%, var(--brown-medium-dark) 100%);
+            border-color: var(--brown-medium-dark);
+            color: #fff;
+            box-shadow: 0 2px 4px rgba(93, 64, 55, 0.3);
+        }
+        
+        /* Card header với màu nâu đất gradient */
+        .card-header.has-background-primary {
+            background: linear-gradient(135deg, var(--brown-dark) 0%, var(--brown-medium-dark) 100%) !important;
+        }
+        
+        /* Cards với background nhẹ nhàng */
+        .card {
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(93, 64, 55, 0.1);
+            border-radius: 8px;
+            transition: box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(93, 64, 55, 0.15);
+        }
+        
+        .card-header {
+            background-color: var(--brown-lightest);
+            border-bottom: 2px solid var(--brown-lighter);
+        }
+        
+        /* Tags màu nâu với các sắc độ khác nhau */
+        .tag.is-primary {
+            background: linear-gradient(135deg, var(--brown-medium) 0%, var(--brown-medium-light) 100%) !important;
+            color: #fff !important;
+            box-shadow: 0 1px 3px rgba(93, 64, 55, 0.2);
+            font-weight: 500;
+        }
+        
+        /* Tags is-info (màu xanh) -> chuyển sang nâu đất với sắc độ khác */
+        .tag.is-info {
+            background: linear-gradient(135deg, var(--brown-medium-light) 0%, var(--brown-light) 100%) !important;
+            color: var(--brown-darkest) !important;
+            box-shadow: 0 1px 3px rgba(93, 64, 55, 0.2);
+            font-weight: 500;
+        }
+        
+        /* Override tất cả các tag màu xanh của Bulma với các sắc độ nâu khác nhau */
+        .tag.is-info,
+        .tag.is-info.is-medium,
+        .tag.is-info.is-large,
+        span.tag.is-info,
+        td .tag.is-info,
+        .table .tag.is-info {
+            background: linear-gradient(135deg, var(--brown-medium-light) 0%, var(--brown-light) 100%) !important;
+            color: var(--brown-darkest) !important;
+            border-color: transparent !important;
+            box-shadow: 0 1px 3px rgba(93, 64, 55, 0.2);
+        }
+        
+        .tag.is-primary,
+        .tag.is-primary.is-medium,
+        .tag.is-primary.is-large,
+        span.tag.is-primary,
+        td .tag.is-primary,
+        .table .tag.is-primary {
+            background: linear-gradient(135deg, var(--brown-medium) 0%, var(--brown-medium-dark) 100%) !important;
+            color: #fff !important;
+            border-color: transparent !important;
+            box-shadow: 0 1px 3px rgba(93, 64, 55, 0.3);
+        }
+        
+        .tag.is-info.is-light,
+        .tag.is-primary.is-light {
+            background-color: var(--brown-lightest) !important;
+            color: var(--brown-text) !important;
+            border: 1px solid var(--brown-lighter) !important;
+        }
+        
+        /* Override màu xanh của Bulma bằng cách target trực tiếp */
+        .tag[class*="is-info"],
+        .tag[class*="is-primary"] {
+            background-color: var(--brown-medium) !important;
+            color: #fff !important;
+        }
+        
+        /* Force override với độ ưu tiên cực cao cho tất cả tags với gradient */
+        body .tag.is-info,
+        body td .tag.is-info,
+        body .table-container .tag.is-info {
+            background: linear-gradient(135deg, var(--brown-medium-light) 0%, var(--brown-light) 100%) !important;
+            color: var(--brown-darkest) !important;
+            border-color: transparent !important;
+        }
+        
+        body .tag.is-primary,
+        body td .tag.is-primary,
+        body .table-container .tag.is-primary {
+            background: linear-gradient(135deg, var(--brown-medium) 0%, var(--brown-medium-dark) 100%) !important;
+            color: #fff !important;
+            border-color: transparent !important;
+        }
+        
+        /* Override cho các variant của tags */
+        body .tag.is-info.is-light,
+        body .tag.is-primary.is-light {
+            background-color: var(--brown-lightest) !important;
+            color: var(--brown-text) !important;
+            border: 1px solid var(--brown-lighter) !important;
+        }
+        
+        /* Buttons is-info (màu xanh) -> chuyển sang nâu đất */
+        .button.is-info,
+        .button.is-info:hover,
+        .button.is-info:focus {
+            background-color: var(--brown-medium);
+            border-color: var(--brown-medium);
+            color: #fff;
+        }
+        
+        .button.is-info:hover {
+            background-color: var(--brown-dark);
+            border-color: var(--brown-dark);
+        }
+        
+        .button.is-info.is-outlined {
+            background-color: transparent;
+            border-color: var(--brown-medium);
+            color: var(--brown-medium);
+        }
+        
+        .button.is-info.is-outlined:hover {
+            background-color: var(--brown-medium);
+            border-color: var(--brown-medium);
+            color: #fff;
+        }
+        
+        /* Notifications is-info -> chuyển sang nâu đất */
+        .notification.is-info {
+            background-color: var(--brown-lighter);
+            color: var(--brown-text);
+        }
+        
+        .notification.is-info.is-light {
+            background-color: var(--brown-lighter);
+            color: var(--brown-text);
+        }
+        
+        /* Backgrounds is-info -> chuyển sang nâu đất */
+        .has-background-info {
+            background-color: var(--brown-medium) !important;
+        }
+        
+        .has-background-info-light {
+            background-color: var(--brown-lighter) !important;
+        }
+        
+        /* Text colors is-info -> chuyển sang nâu đất */
+        .has-text-info {
+            color: var(--brown-medium) !important;
+        }
+        
+        /* Pagination màu nâu đất */
+        .pagination-previous:focus,
+        .pagination-next:focus,
+        .pagination-link:focus {
+            border-color: var(--brown-medium);
+        }
+        
+        .pagination-previous:hover,
+        .pagination-next:hover,
+        .pagination-link:hover {
+            border-color: var(--brown-medium);
+            color: var(--brown-medium);
+        }
+        
+        .pagination-link.is-current {
+            background-color: var(--brown-medium);
+            border-color: var(--brown-medium);
+        }
+        
+        /* Background body với màu cream nhẹ nhàng */
+        body {
+            background: linear-gradient(180deg, var(--brown-cream) 0%, #fff 100%);
+            min-height: 100vh;
+        }
+        
+        /* Section với background trong suốt */
+        .section {
+            background-color: transparent;
+        }
+        
+        /* Footer màu nâu với gradient */
+        .footer {
+            background: linear-gradient(135deg, var(--brown-lighter) 0%, var(--brown-lightest) 100%);
+            color: var(--brown-text);
+            border-top: 2px solid var(--brown-light);
+            margin-top: 3rem;
+        }
+        
+        /* Table styling với màu nâu nhẹ nhàng */
+        .table {
+            background-color: #fff;
+        }
+        
+        .table thead th {
+            background-color: var(--brown-lightest);
+            color: var(--brown-darkest);
+            font-weight: 600;
+            border-bottom: 2px solid var(--brown-lighter);
+        }
+        
+        .table tbody tr {
+            transition: background-color 0.2s ease;
+        }
+        
+        .table tbody tr:hover {
+            background-color: var(--brown-cream);
+        }
+        
+        .table.is-hoverable tbody tr:hover {
+            background-color: var(--brown-cream);
         }
     </style>
     {% block extra_css %}{% endblock %}
@@ -66,6 +350,19 @@
                     {% endif %}
                     <a class="navbar-item" href="{% url 'equipment:report' %}">
                         <i class="fas fa-chart-bar mr-2"></i> Báo cáo
+                    </a>
+                    <a class="navbar-item" href="{% url 'renewals:renewal_list' %}">
+                        <span class="icon-text">
+                            <span class="icon">
+                                <i class="fas fa-sync-alt"></i>
+                            </span>
+                            <span>Gia hạn dịch vụ</span>
+                            {% if expiring_soon_count > 0 %}
+                            <span class="tag is-warning is-rounded ml-2" style="font-size: 0.7rem; min-width: 1.5rem; height: 1.5rem; line-height: 1.5rem; padding: 0 0.5rem;">
+                                {{ expiring_soon_count }}
+                            </span>
+                            {% endif %}
+                        </span>
                     </a>
                     <a class="navbar-item" href="{% url 'tickets:ticket_list' %}">
                         <span class="icon-text">
@@ -135,6 +432,40 @@
                     });
                 });
             }
+            
+            // Force override màu xanh của tags sang nâu đất bằng cách inject CSS
+            // Tạo style element với CSS có độ ưu tiên cao và gradient
+            const brownMedium = '#8D6E63';
+            const brownMediumLight = '#A1887F';
+            const brownLight = '#BCAAA4';
+            const brownDarkest = '#3E2723';
+            const brownLighter = '#D7CCC8';
+            const brownLightest = '#EFEBE9';
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                body .tag.is-info,
+                body td .tag.is-info,
+                body .table-container .tag.is-info {
+                    background: linear-gradient(135deg, ${brownMediumLight} 0%, ${brownLight} 100%) !important;
+                    color: ${brownDarkest} !important;
+                    border-color: transparent !important;
+                }
+                body .tag.is-primary,
+                body td .tag.is-primary,
+                body .table-container .tag.is-primary {
+                    background: linear-gradient(135deg, ${brownMedium} 0%, #6D4C41 100%) !important;
+                    color: #fff !important;
+                    border-color: transparent !important;
+                }
+                body .tag.is-info.is-light,
+                body .tag.is-primary.is-light {
+                    background-color: ${brownLightest} !important;
+                    color: ${brownDarkest} !important;
+                    border: 1px solid ${brownLighter} !important;
+                }
+            `;
+            document.head.appendChild(style);
         });
     </script>
     {% block extra_js %}{% endblock %}

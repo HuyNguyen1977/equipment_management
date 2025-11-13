@@ -1,0 +1,117 @@
+{% extends 'renewals/base.html' %}
+
+{% block page_title %}Gia hạn: {{ renewal.name }}{% endblock %}
+
+{% block content %}
+<div class="columns is-centered">
+    <div class="column is-8">
+        <div class="card mb-5">
+            <header class="card-header">
+                <p class="card-header-title">Thông tin dịch vụ hiện tại</p>
+            </header>
+            <div class="card-content">
+                <table class="table is-fullwidth">
+                    <tbody>
+                        <tr>
+                            <td><strong>Tên dịch vụ:</strong></td>
+                            <td>{{ renewal.name }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ngày hết hạn hiện tại:</strong></td>
+                            <td><strong class="has-text-danger">{{ renewal.expiry_date|date:"d/m/Y" }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Chu kỳ gia hạn:</strong></td>
+                            <td>{{ renewal.renewal_period }} tháng</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="card">
+            <header class="card-header">
+                <p class="card-header-title">Thông tin gia hạn</p>
+            </header>
+            <div class="card-content">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="columns">
+                        <div class="column is-one-third">
+                            <div class="field">
+                                <label class="label">Ngày gia hạn <span class="has-text-danger">*</span></label>
+                                <div class="control">
+                                    {{ form.renewal_date }}
+                                </div>
+                                {% if form.renewal_date.errors %}
+                                    <p class="help is-danger">{{ form.renewal_date.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="column is-one-third">
+                            <div class="field">
+                                <label class="label">Ngày hết hạn cũ <span class="has-text-danger">*</span></label>
+                                <div class="control">
+                                    {{ form.old_expiry_date }}
+                                </div>
+                                {% if form.old_expiry_date.errors %}
+                                    <p class="help is-danger">{{ form.old_expiry_date.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="column is-one-third">
+                            <div class="field">
+                                <label class="label">Ngày hết hạn mới <span class="has-text-danger">*</span></label>
+                                <div class="control">
+                                    {{ form.new_expiry_date }}
+                                </div>
+                                {% if form.new_expiry_date.errors %}
+                                    <p class="help is-danger">{{ form.new_expiry_date.errors }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="field">
+                        <label class="label">Chi phí gia hạn (VND)</label>
+                        <div class="control">
+                            {{ form.cost }}
+                        </div>
+                        {% if form.cost.errors %}
+                            <p class="help is-danger">{{ form.cost.errors }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="field">
+                        <label class="label">Ghi chú</label>
+                        <div class="control">
+                            {{ form.notes }}
+                        </div>
+                        {% if form.notes.errors %}
+                            <p class="help is-danger">{{ form.notes.errors }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="field is-grouped">
+                        <div class="control">
+                            <button type="submit" class="button is-success">
+                                <span class="icon">
+                                    <i class="fas fa-sync-alt"></i>
+                                </span>
+                                <span>Gia hạn</span>
+                            </button>
+                        </div>
+                        <div class="control">
+                            <a href="{% url 'renewals:renewal_detail' renewal.pk %}" class="button is-light">
+                                Hủy
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

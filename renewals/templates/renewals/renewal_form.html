@@ -1,0 +1,431 @@
+{% extends 'renewals/base.html' %}
+
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="columns is-centered">
+    <div class="column is-10">
+        <div class="card">
+            <header class="card-header">
+                <p class="card-header-title">
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="fas fa-{% if renewal %}edit{% else %}plus-circle{% endif %}"></i>
+                        </span>
+                        <span>{{ title }}</span>
+                    </span>
+                </p>
+            </header>
+            <div class="card-content">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-5">
+                        <h3 class="title is-5 mb-4">Thông tin cơ bản</h3>
+                        <div class="columns">
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">Loại dịch vụ <span class="has-text-danger">*</span></label>
+                                    <div class="control">
+                                        {{ form.renewal_type }}
+                                    </div>
+                                    {% if form.renewal_type.errors %}
+                                        <p class="help is-danger">{{ form.renewal_type.errors }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">Công ty</label>
+                                    <div class="control">
+                                        {{ form.company }}
+                                    </div>
+                                    {% if form.company.errors %}
+                                        <p class="help is-danger">{{ form.company.errors }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label class="label">Tên dịch vụ <span class="has-text-danger">*</span></label>
+                            <div class="control">
+                                {{ form.name }}
+                            </div>
+                            {% if form.name.errors %}
+                                <p class="help is-danger">{{ form.name.errors }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="field">
+                            <label class="label">Mô tả</label>
+                            <div class="control">
+                                {{ form.description }}
+                            </div>
+                            {% if form.description.errors %}
+                                <p class="help is-danger">{{ form.description.errors }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-5">
+                        <h3 class="title is-5 mb-4">Thông tin gia hạn</h3>
+                        <div class="columns">
+                            <div class="column is-one-third">
+                                <div class="field">
+                                    <label class="label">Ngày bắt đầu <span class="has-text-danger">*</span></label>
+                                    <div class="control">
+                                        {{ form.start_date }}
+                                    </div>
+                                    {% if form.start_date.errors %}
+                                        <p class="help is-danger">{{ form.start_date.errors }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="column is-one-third">
+                                <div class="field">
+                                    <label class="label">Ngày hết hạn <span class="has-text-danger">*</span></label>
+                                    <div class="control">
+                                        {{ form.expiry_date }}
+                                    </div>
+                                    {% if form.expiry_date.errors %}
+                                        <p class="help is-danger">{{ form.expiry_date.errors }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="column is-one-third">
+                                <div class="field">
+                                    <label class="label">Chu kỳ gia hạn (tháng) <span class="has-text-danger">*</span></label>
+                                    <div class="control">
+                                        {{ form.renewal_period }}
+                                    </div>
+                                    {% if form.renewal_period.errors %}
+                                        <p class="help is-danger">{{ form.renewal_period.errors }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="columns">
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">Chi phí (VND)</label>
+                                    <div class="control">
+                                        {{ form.cost }}
+                                    </div>
+                                    {% if form.cost.errors %}
+                                        <p class="help is-danger">{{ form.cost.errors }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">Trạng thái</label>
+                                    <div class="control">
+                                        {{ form.status }}
+                                    </div>
+                                    {% if form.status.errors %}
+                                        <p class="help is-danger">{{ form.status.errors }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label class="checkbox">
+                                {{ form.auto_renewal }}
+                                Tự động gia hạn
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-5">
+                        <h3 class="title is-5 mb-4">Nhà cung cấp</h3>
+                        <div class="columns">
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">Tên nhà cung cấp</label>
+                                    <div class="control">
+                                        {{ form.provider }}
+                                    </div>
+                                    {% if form.provider.errors %}
+                                        <p class="help is-danger">{{ form.provider.errors }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="column is-half">
+                                <div class="field">
+                                    <label class="label">Liên hệ</label>
+                                    <div class="control">
+                                        {{ form.provider_contact }}
+                                    </div>
+                                    {% if form.provider_contact.errors %}
+                                        <p class="help is-danger">{{ form.provider_contact.errors }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-5">
+                        <h3 class="title is-5 mb-4">Quản lý</h3>
+                        <div class="field">
+                            <label class="label">Người phụ trách</label>
+                            <div class="control" id="responsible-person-container">
+                                <div class="field has-addons">
+                                    <div class="control is-expanded">
+                                        {{ form.responsible_person }}
+                                    </div>
+                                    <div class="control">
+                                        <button type="button" class="button is-primary" id="btn-create-user-renewal">
+                                            <span class="icon">
+                                                <i class="fas fa-plus"></i>
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% if form.responsible_person.errors %}
+                                <p class="help is-danger">{{ form.responsible_person.errors }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="field">
+                            <label class="label">Ghi chú</label>
+                            <div class="control">
+                                {{ form.notes }}
+                            </div>
+                            {% if form.notes.errors %}
+                                <p class="help is-danger">{{ form.notes.errors }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="field is-grouped">
+                        <div class="control">
+                            <button type="submit" class="button is-primary">
+                                <span class="icon">
+                                    <i class="fas fa-save"></i>
+                                </span>
+                                <span>Lưu</span>
+                            </button>
+                        </div>
+                        <div class="control">
+                            <a href="{% if renewal %}{% url 'renewals:renewal_detail' renewal.pk %}{% else %}{% url 'renewals:renewal_list' %}{% endif %}" class="button is-light">
+                                Hủy
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Select2 cho responsible_person
+    const responsiblePersonSelect = document.getElementById('id_responsible_person');
+    if (responsiblePersonSelect) {
+        function initSelect2() {
+            if (typeof $ === 'undefined' || typeof $.fn.select2 === 'undefined') {
+                setTimeout(initSelect2, 100);
+                return;
+            }
+            
+            const currentValue = $(responsiblePersonSelect).val();
+            const currentText = $(responsiblePersonSelect).find('option:selected').text();
+            
+            $(responsiblePersonSelect).select2({
+                width: '100%',
+                placeholder: 'Chọn hoặc tìm kiếm user...',
+                allowClear: true,
+                dropdownParent: $(responsiblePersonSelect).closest('#responsible-person-container'),
+                language: {
+                    noResults: function() {
+                        return 'Không tìm thấy. Click nút + để tạo mới.';
+                    },
+                    searching: function() {
+                        return 'Đang tìm kiếm...';
+                    }
+                },
+                ajax: {
+                    url: '{% url "renewals:search_users" %}',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            q: params.term,
+                            page: params.page
+                        };
+                    },
+                    processResults: function (data, params) {
+                        params.page = params.page || 1;
+                        return {
+                            results: data.users.map(function(user) {
+                                return {
+                                    id: user.id,
+                                    text: user.display
+                                };
+                            }),
+                            pagination: {
+                                more: false
+                            }
+                        };
+                    },
+                    cache: true
+                },
+                minimumInputLength: 2
+            });
+            
+            if (currentValue && currentText && currentValue !== '') {
+                if ($(responsiblePersonSelect).find('option[value="' + currentValue + '"]').length === 0) {
+                    const option = new Option(currentText, currentValue, true, true);
+                    $(responsiblePersonSelect).append(option);
+                }
+                $(responsiblePersonSelect).trigger('change');
+            }
+        }
+        
+        initSelect2();
+    }
+
+    // Button tạo user
+    const btnCreateUser = document.getElementById('btn-create-user-renewal');
+    if (btnCreateUser) {
+        btnCreateUser.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            showCreateUserModal();
+        });
+    }
+
+    function showCreateUserModal() {
+        const modalHtml = `
+            <div class="modal is-active" id="createUserModal">
+                <div class="modal-background" onclick="document.getElementById('createUserModal').remove()"></div>
+                <div class="modal-card">
+                    <header class="modal-card-head">
+                        <p class="modal-card-title">
+                            <span class="icon-text">
+                                <span class="icon">
+                                    <i class="fas fa-user-plus"></i>
+                                </span>
+                                <span>Tạo user mới nhanh</span>
+                            </span>
+                        </p>
+                        <button class="delete" aria-label="close" onclick="document.getElementById('createUserModal').remove()"></button>
+                    </header>
+                    <section class="modal-card-body">
+                        <div class="field">
+                            <label class="label">Tên đầy đủ <span class="has-text-danger">*</span></label>
+                            <div class="control">
+                                <input type="text" class="input" id="new_user_name" placeholder="Ví dụ: Nguyễn Văn A" required autofocus>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label class="label">Tên đăng nhập</label>
+                            <div class="control">
+                                <input type="text" class="input" id="new_user_username" placeholder="Ví dụ: nguyenvana (để trống sẽ tự tạo)" pattern="[a-zA-Z0-9_]+" title="Chỉ cho phép chữ cái, số và dấu gạch dưới">
+                            </div>
+                            <p class="help">Chỉ cho phép chữ cái, số và dấu gạch dưới (_). Để trống sẽ tự động tạo từ tên.</p>
+                        </div>
+                        <div class="field">
+                            <label class="label">Email <span class="has-text-danger">*</span></label>
+                            <div class="control">
+                                <input type="email" class="input" id="new_user_email" placeholder="email@example.com" required>
+                            </div>
+                        </div>
+                        <div class="notification is-info is-light">
+                            <span class="icon">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                            <strong>Password mặc định:</strong> <code>Pega@2025</code>
+                            <br><small>Người dùng nên đổi password sau khi đăng nhập lần đầu.</small>
+                        </div>
+                    </section>
+                    <footer class="modal-card-foot">
+                        <button class="button" onclick="document.getElementById('createUserModal').remove()">Hủy</button>
+                        <button class="button is-primary" id="btn-save-user">
+                            <span class="icon">
+                                <i class="fas fa-check"></i>
+                            </span>
+                            <span>Tạo user</span>
+                        </button>
+                    </footer>
+                </div>
+            </div>
+        `;
+        
+        const oldModal = document.getElementById('createUserModal');
+        if (oldModal) {
+            oldModal.remove();
+        }
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        document.getElementById('btn-save-user').addEventListener('click', function() {
+            const name = document.getElementById('new_user_name').value.trim();
+            const username = document.getElementById('new_user_username').value.trim();
+            const email = document.getElementById('new_user_email').value.trim();
+            
+            if (!name || !email) {
+                alert('Vui lòng nhập đầy đủ Tên và Email');
+                return;
+            }
+            
+            // Validate username nếu có nhập
+            if (username) {
+                const usernamePattern = /^[a-zA-Z0-9_]+$/;
+                if (!usernamePattern.test(username)) {
+                    alert('Tên đăng nhập chỉ được chứa chữ cái, số và dấu gạch dưới (_)');
+                    return;
+                }
+            }
+            
+            const btnSave = this;
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<span class="icon"><i class="fas fa-spinner fa-spin"></i></span><span>Đang tạo...</span>';
+            
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('email', email);
+            if (username) {
+                formData.append('username', username);
+            }
+            
+            fetch('{% url "renewals:create_user_quick" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const select = document.getElementById('id_responsible_person');
+                    const option = document.createElement('option');
+                    option.value = data.user.id;
+                    option.textContent = data.user.display;
+                    option.selected = true;
+                    select.appendChild(option);
+                    
+                    if (typeof $ !== 'undefined' && $.fn.select2) {
+                        $(select).append(new Option(data.user.display, data.user.id, true, true)).trigger('change');
+                    }
+                    
+                    document.getElementById('createUserModal').remove();
+                } else {
+                    alert('Lỗi: ' + (data.error || 'Không thể tạo user'));
+                    btnSave.disabled = false;
+                    btnSave.innerHTML = '<span class="icon"><i class="fas fa-check"></i></span><span>Tạo user</span>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi tạo user');
+                btnSave.disabled = false;
+                btnSave.innerHTML = '<span class="icon"><i class="fas fa-check"></i></span><span>Tạo user</span>';
+            });
+        });
+    }
+});
+</script>
+{% endblock %}
+
