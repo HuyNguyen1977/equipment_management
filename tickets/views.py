@@ -58,7 +58,8 @@ def ticket_create(request):
                 f'Ticket {ticket.ticket_number} đã được tạo thành công! '
                 f'Chúng tôi sẽ liên hệ với bạn sớm nhất có thể.'
             )
-            return redirect('tickets:ticket_detail', ticket_number=ticket.ticket_number)
+            # return redirect('tickets:ticket_detail', ticket_number=ticket.ticket_number)
+            return redirect("https://saigonbooks.vn")
     else:
         form = TicketForm()
     

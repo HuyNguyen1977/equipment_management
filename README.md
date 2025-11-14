@@ -129,3 +129,14 @@ Hệ thống sẽ tự động parse và trích xuất:
 - Card đồ họa
 - Các thông số kỹ thuật khác
 
+Management Command (equipment/management/commands/export_db.py)
+Export SQLite database ra file SQL dump
+Hỗ trợ cả sqlite3 command line và Python sqlite3 module
+Tự động tạo tên file với timestamp
+Xử lý encoding UTF-8 cho Windows
+
+# Export với tên file tự động (db_dump_YYYYMMDD_HHMMSS.sql)
+python manage.py export_db
+
+# Export với tên file tùy chỉnh
+python manage.py export_db --output my_backup.sql

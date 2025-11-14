@@ -698,7 +698,7 @@ def export_to_excel(equipment_list):
     center_alignment = Alignment(horizontal='center', vertical='center')
     
     # Tiêu đề
-    ws.merge_cells('A1:Q1')
+    ws.merge_cells('A1:R1')
     ws['A1'] = 'BÁO CÁO THIẾT BỊ IT'
     ws['A1'].font = Font(bold=True, size=16)
     ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
@@ -707,7 +707,7 @@ def export_to_excel(equipment_list):
     # Header row
     headers = [
         'STT', 'Mã thiết bị', 'Tên thiết bị', 'Công ty', 'Miền', 'Loại thiết bị',
-        'Tên máy', 'Hệ điều hành', 'Nhà sản xuất', 'Model', 'Bộ xử lý',
+        'Ngày đưa vào sử dụng', 'Tên máy', 'Hệ điều hành', 'Nhà sản xuất', 'Model', 'Bộ xử lý',
         'Bộ nhớ', 'HDD/SSD', 'Card đồ họa', 'Người sử dụng', 'Email', 'Trạng thái'
     ]
     
@@ -744,6 +744,11 @@ def export_to_excel(equipment_list):
         # Loại thiết bị
         type_display = dict(Equipment.EQUIPMENT_TYPES).get(equipment.equipment_type, equipment.equipment_type)
         
+        # Ngày đưa vào sử dụng
+        commission_date_str = ''
+        if equipment.commission_date:
+            commission_date_str = equipment.commission_date.strftime('%d/%m/%Y')
+        
         data = [
             idx,
             equipment.code,
@@ -751,6 +756,7 @@ def export_to_excel(equipment_list):
             equipment.company.name if equipment.company else '',
             region_display,
             type_display,
+            commission_date_str,
             equipment.machine_name or '',
             equipment.operating_system or '',
             equipment.system_manufacturer or '',
@@ -776,7 +782,7 @@ def export_to_excel(equipment_list):
         row_num += 1
     
     # Điều chỉnh độ rộng cột
-    column_widths = [6, 15, 25, 20, 12, 15, 20, 20, 20, 20, 25, 15, 20, 20, 20, 25, 15]
+    column_widths = [6, 15, 25, 20, 12, 15, 18, 20, 20, 20, 20, 25, 15, 20, 20, 20, 25, 15]
     for col_num, width in enumerate(column_widths, 1):
         ws.column_dimensions[get_column_letter(col_num)].width = width
     
