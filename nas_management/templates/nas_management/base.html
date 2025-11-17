@@ -1,0 +1,16 @@
+{% extends 'equipment/base.html' %}
+
+{% block title %}{% block page_title %}Quản lý NAS Synology{% endblock %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom CSS for NAS app if needed */
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        {% block nas_content %}{% endblock %}
+    </div>
+{% endblock %}
+

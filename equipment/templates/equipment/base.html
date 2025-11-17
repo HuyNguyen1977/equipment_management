@@ -378,6 +378,9 @@
                         </span>
                     </a>
                     {% if user.is_staff %}
+                        <a class="navbar-item" href="{% url 'nas_management:dashboard' %}">
+                            <i class="fas fa-server mr-2"></i> Quản lý NAS
+                        </a>
                         <a class="navbar-item" href="{% url 'admin:index' %}">
                             <i class="fas fa-cog mr-2"></i> Admin
                         </a>

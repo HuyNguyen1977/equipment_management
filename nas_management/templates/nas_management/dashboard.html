@@ -1,0 +1,197 @@
+{% extends 'nas_management/base.html' %}
+
+{% block page_title %}Dashboard NAS - Theo dõi CPU/RAM/Disk{% endblock %}
+
+{% block nas_content %}
+<div class="mb-5">
+    <h1 class="title is-3">
+        <span class="icon-text">
+            <span class="icon">
+                <i class="fas fa-server"></i>
+            </span>
+            <span>Dashboard NAS</span>
+        </span>
+    </h1>
+    <p class="subtitle">Theo dõi CPU, RAM và Disk của NAS Synology</p>
+</div>
+
+<!-- Chọn NAS -->
+<div class="card mb-5">
+    <div class="card-content">
+        <form method="get" action="{% url 'nas_management:dashboard' %}">
+            <div class="field">
+                <label class="label">Chọn NAS</label>
+                <div class="control">
+                    <div class="select is-fullwidth">
+                        <select name="nas_id" onchange="this.form.submit()">
+                            {% for nas in nas_list %}
+                                <option value="{{ nas.id }}" {% if selected_nas.id == nas.id %}selected{% endif %}>
+                                    {{ nas.name }} ({{ nas.host }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if selected_nas and stats_data %}
+<!-- Thống kê hiện tại -->
+<div class="columns mb-5">
+    <div class="column">
+        <div class="card">
+            <div class="card-content">
+                <p class="heading">CPU Usage</p>
+                <p class="title is-2">{{ stats_data.cpu_usage }}%</p>
+                <progress class="progress is-primary" value="{{ stats_data.cpu_usage }}" max="100">{{ stats_data.cpu_usage }}%</progress>
+            </div>
+        </div>
+    </div>
+    <div class="column">
+        <div class="card">
+            <div class="card-content">
+                <p class="heading">Memory Usage</p>
+                <p class="title is-2">{{ stats_data.memory_usage }}%</p>
+                <progress class="progress is-info" value="{{ stats_data.memory_usage }}" max="100">{{ stats_data.memory_usage }}%</progress>
+                <p class="is-size-7 mt-2">
+                    {{ stats_data.memory_used|filesizeformat }} / {{ stats_data.memory_total|filesizeformat }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Disk Usage -->
+{% if stats_data.disk_info %}
+<div class="card mb-5">
+    <header class="card-header">
+        <p class="card-header-title">Disk Usage</p>
+    </header>
+    <div class="card-content">
+        <div class="content">
+            {% for disk in stats_data.disk_info %}
+            <div class="mb-4">
+                <p class="has-text-weight-bold">{{ disk.name|default:"Unknown" }}</p>
+                {% if disk.size and disk.used %}
+                    {% widthratio disk.used disk.size 100 as disk_usage %}
+                    <progress class="progress {% if disk_usage > 90 %}is-danger{% elif disk_usage > 75 %}is-warning{% else %}is-success{% endif %}" 
+                              value="{{ disk.used }}" max="{{ disk.size }}">{{ disk_usage }}%</progress>
+                    <p class="is-size-7">
+                        {{ disk.used|filesizeformat }} / {{ disk.size|filesizeformat }} ({{ disk_usage }}%)
+                    </p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Biểu đồ CPU/RAM -->
+{% if recent_stats %}
+<div class="card">
+    <header class="card-header">
+        <p class="card-header-title">Lịch sử CPU/RAM (60 điểm gần nhất)</p>
+    </header>
+    <div class="card-content">
+        <canvas id="statsChart" width="400" height="200"></canvas>
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="notification is-warning">
+    <p>Vui lòng chọn NAS hoặc cấu hình NAS trong Admin.</p>
+</div>
+{% endif %}
+
+<!-- Menu -->
+<div class="card mt-5">
+    <div class="card-content">
+        <div class="buttons">
+            <a href="{% url 'nas_management:login_history' %}{% if selected_nas %}?nas_id={{ selected_nas.id }}{% endif %}" class="button is-primary">
+                <span class="icon">
+                    <i class="fas fa-history"></i>
+                </span>
+                <span>Lịch sử đăng nhập</span>
+            </a>
+            <a href="{% url 'nas_management:nas_logs' %}{% if selected_nas %}?nas_id={{ selected_nas.id }}{% endif %}" class="button is-primary">
+                <span class="icon">
+                    <i class="fas fa-file-alt"></i>
+                </span>
+                <span>Logs</span>
+            </a>
+            <a href="{% url 'nas_management:file_manager' %}{% if selected_nas %}?nas_id={{ selected_nas.id }}{% endif %}" class="button is-primary">
+                <span class="icon">
+                    <i class="fas fa-folder-open"></i>
+                </span>
+                <span>Quản lý File</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if recent_stats %}
+    const ctx = document.getElementById('statsChart').getContext('2d');
+    const labels = [
+        {% for stat in recent_stats reversed %}
+        '{{ stat.timestamp|date:"H:i" }}'{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    const cpuData = [
+        {% for stat in recent_stats reversed %}
+        {{ stat.cpu_usage }}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    const memoryData = [
+        {% for stat in recent_stats reversed %}
+        {{ stat.memory_usage }}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'CPU Usage (%)',
+                data: cpuData,
+                borderColor: 'rgb(139, 90, 43)',
+                backgroundColor: 'rgba(139, 90, 43, 0.1)',
+                tension: 0.1
+            }, {
+                label: 'Memory Usage (%)',
+                data: memoryData,
+                borderColor: 'rgb(93, 64, 55)',
+                backgroundColor: 'rgba(93, 64, 55, 0.1)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}
+
+

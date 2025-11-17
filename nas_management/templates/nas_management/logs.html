@@ -1,0 +1,331 @@
+{% extends 'nas_management/base.html' %}
+
+{% block page_title %}Logs NAS{% endblock %}
+
+{% block nas_content %}
+<div class="mb-5">
+    <h1 class="title is-3">
+        <span class="icon-text">
+            <span class="icon">
+                <i class="fas fa-file-alt"></i>
+            </span>
+            <span>Logs NAS</span>
+        </span>
+    </h1>
+    <p class="subtitle">Xem và theo dõi logs của hệ thống NAS</p>
+    <div class="buttons">
+        <a href="{% url 'nas_management:logs_dashboard' %}{% if selected_nas_id %}?nas_id={{ selected_nas_id }}{% endif %}" class="button is-info">
+            <span class="icon"><i class="fas fa-chart-line"></i></span>
+            <span>Dashboard</span>
+        </a>
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="card mb-5">
+    <div class="card-content">
+        <form method="get" action="{% url 'nas_management:nas_logs' %}">
+            <div class="columns">
+                <div class="column">
+                    <div class="field">
+                        <label class="label">NAS</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="nas_id">
+                                    <option value="">Tất cả</option>
+                                    {% for nas in nas_list %}
+                                        <option value="{{ nas.id }}" {% if selected_nas_id == nas.id|stringformat:"s" or selected_nas_id|add:0 == nas.id %}selected{% endif %}>
+                                            {{ nas.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Loại log</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="log_type">
+                                    <option value="">Tất cả</option>
+                                    <option value="syslog" {% if log_type_filter == "syslog" %}selected{% endif %}>System Log</option>
+                                    <option value="connectlog" {% if log_type_filter == "connectlog" %}selected{% endif %}>Connection Log</option>
+                                    <option value="filexferlog" {% if log_type_filter == "filexferlog" %}selected{% endif %}>File Transfer Log</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Mức độ</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="level">
+                                    <option value="">Tất cả</option>
+                                    <option value="info" {% if level_filter == "info" %}selected{% endif %}>Info</option>
+                                    <option value="warning" {% if level_filter == "warning" %}selected{% endif %}>Warning</option>
+                                    <option value="error" {% if level_filter == "error" %}selected{% endif %}>Error</option>
+                                    <option value="critical" {% if level_filter == "critical" %}selected{% endif %}>Critical</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Danh mục</label>
+                        <div class="control">
+                            <input class="input" type="text" name="category" value="{{ category_filter }}" placeholder="Tìm kiếm danh mục">
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Từ ngày</label>
+                        <div class="control">
+                            <input class="input" type="date" name="date_from" value="{{ date_from }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Đến ngày</label>
+                        <div class="control">
+                            <input class="input" type="date" name="date_to" value="{{ date_to }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-narrow">
+                    <div class="field">
+                        <label class="label">&nbsp;</label>
+                        <div class="control">
+                            <button type="submit" class="button is-primary">Tìm kiếm</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Danh sách logs -->
+<div class="card">
+    <header class="card-header">
+        <p class="card-header-title">
+            Danh sách Logs ({{ page_obj.paginator.count }} bản ghi)
+        </p>
+        <div class="card-header-icon">
+            <div class="buttons">
+                {% if selected_nas_id %}
+                <a href="{% url 'nas_management:sync_logs' selected_nas_id %}" class="button is-small is-primary" onclick="this.classList.add('is-loading'); this.disabled=true;">
+                    <span class="icon">
+                        <i class="fas fa-sync"></i>
+                    </span>
+                    <span>Đồng bộ từ NAS</span>
+                </a>
+                {% elif nas_list|length == 1 %}
+                <a href="{% url 'nas_management:sync_logs' nas_list.0.id %}" class="button is-small is-primary" onclick="this.classList.add('is-loading'); this.disabled=true;">
+                    <span class="icon">
+                        <i class="fas fa-sync"></i>
+                    </span>
+                    <span>Đồng bộ từ NAS</span>
+                </a>
+                {% endif %}
+                <button class="button is-small is-info" onclick="document.getElementById('upload-modal').classList.add('is-active');">
+                    <span class="icon">
+                        <i class="fas fa-upload"></i>
+                    </span>
+                    <span>Upload CSV</span>
+                </button>
+                <button class="button is-small is-danger" onclick="if(confirm('Bạn có chắc chắn muốn xóa TẤT CẢ logs trong database? Hành động này không thể hoàn tác!')) { document.getElementById('clear-all-form').submit(); }">
+                    <span class="icon">
+                        <i class="fas fa-trash"></i>
+                    </span>
+                    <span>Xóa tất cả</span>
+                </button>
+            </div>
+        </div>
+    </header>
+    <div class="card-content">
+        <div class="content">
+            <table class="table is-fullwidth is-hoverable">
+                <thead>
+                    <tr>
+                        <th>NAS</th>
+                        <th>Mức độ</th>
+                        <th>Danh mục</th>
+                        <th>Nội dung</th>
+                        <th>Nguồn</th>
+                        <th>Thời gian</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log.nas.name }}</td>
+                        <td>
+                            {% if log.level == 'critical' %}
+                                <span class="tag is-danger">Critical</span>
+                            {% elif log.level == 'error' %}
+                                <span class="tag is-danger">Error</span>
+                            {% elif log.level == 'warning' %}
+                                <span class="tag is-warning">Warning</span>
+                            {% else %}
+                                <span class="tag is-info">Info</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ log.category|default:"-" }}</td>
+                        <td>{{ log.message|truncatewords:20 }}</td>
+                        <td>{{ log.source|default:"-" }}</td>
+                        <td>{{ log.timestamp|date:"d/m/Y H:i:s" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="has-text-centered has-text-grey">Chưa có dữ liệu</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Phân trang -->
+        {% if page_obj.has_other_pages %}
+        <nav class="pagination is-centered" role="navigation" aria-label="pagination">
+            {% if page_obj.has_previous %}
+                <a class="pagination-previous" href="?page={{ page_obj.previous_page_number }}{% if selected_nas_id %}&nas_id={{ selected_nas_id }}{% endif %}{% if log_type_filter %}&log_type={{ log_type_filter }}{% endif %}{% if level_filter %}&level={{ level_filter }}{% endif %}{% if category_filter %}&category={{ category_filter|urlencode }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">Trước</a>
+            {% else %}
+                <a class="pagination-previous" disabled>Trước</a>
+            {% endif %}
+            
+            {% if page_obj.has_next %}
+                <a class="pagination-next" href="?page={{ page_obj.next_page_number }}{% if selected_nas_id %}&nas_id={{ selected_nas_id }}{% endif %}{% if log_type_filter %}&log_type={{ log_type_filter }}{% endif %}{% if level_filter %}&level={{ level_filter }}{% endif %}{% if category_filter %}&category={{ category_filter|urlencode }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">Sau</a>
+            {% else %}
+                <a class="pagination-next" disabled>Sau</a>
+            {% endif %}
+            
+            <ul class="pagination-list">
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li><a class="pagination-link is-current" aria-label="Page {{ num }}" aria-current="page">{{ num }}</a></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li><a class="pagination-link" href="?page={{ num }}{% if selected_nas_id %}&nas_id={{ selected_nas_id }}{% endif %}{% if log_type_filter %}&log_type={{ log_type_filter }}{% endif %}{% if level_filter %}&level={{ level_filter }}{% endif %}{% if category_filter %}&category={{ category_filter|urlencode }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Goto page {{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal Upload CSV -->
+<div class="modal" id="upload-modal">
+    <div class="modal-background" onclick="document.getElementById('upload-modal').classList.remove('is-active');"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">
+                <span class="icon-text">
+                    <span class="icon">
+                        <i class="fas fa-upload"></i>
+                    </span>
+                    <span>Upload Log CSV</span>
+                </span>
+            </p>
+            <button class="delete" aria-label="close" onclick="document.getElementById('upload-modal').classList.remove('is-active');"></button>
+        </header>
+        <section class="modal-card-body">
+            <form method="post" action="{% url 'nas_management:upload_logs_csv' %}{% if selected_nas_id %}?nas_id={{ selected_nas_id }}{% endif %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="field">
+                    <label class="label">{{ upload_form.nas.label }}</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            {{ upload_form.nas }}
+                        </div>
+                    </div>
+                    {% if upload_form.nas.help_text %}
+                    <p class="help">{{ upload_form.nas.help_text }}</p>
+                    {% endif %}
+                    {% if upload_form.nas.errors %}
+                    <p class="help is-danger">{{ upload_form.nas.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="field">
+                    <label class="label">{{ upload_form.csv_file.label }}</label>
+                    <div class="control">
+                        <div class="file has-name is-fullwidth">
+                            <label class="file-label">
+                                <input class="file-input" type="file" name="csv_file" accept=".csv" required>
+                                <span class="file-cta">
+                                    <span class="file-icon">
+                                        <i class="fas fa-upload"></i>
+                                    </span>
+                                    <span class="file-label">Chọn file CSV</span>
+                                </span>
+                                <span class="file-name">Chưa chọn file</span>
+                            </label>
+                        </div>
+                    </div>
+                    {% if upload_form.csv_file.help_text %}
+                    <p class="help">{{ upload_form.csv_file.help_text }}</p>
+                    {% endif %}
+                    {% if upload_form.csv_file.errors %}
+                    <p class="help is-danger">{{ upload_form.csv_file.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="notification is-info is-light">
+                    <p class="is-size-7">
+                        <strong>Lưu ý:</strong><br>
+                        • File CSV phải có format: <code>Level,Log,Time,User,Event</code><br>
+                        • Ví dụ: <code>Info,System,2025/11/17 10:58:53,SYSTEM,Message...</code><br>
+                        • <strong>Chỉ import logs của tháng hiện tại và tháng trước</strong> (logs cũ hơn sẽ tự động bỏ qua)
+                    </p>
+                </div>
+                
+                <div class="field is-grouped">
+                    <div class="control">
+                        <button type="submit" class="button is-primary">
+                            <span class="icon">
+                                <i class="fas fa-upload"></i>
+                            </span>
+                            <span>Upload</span>
+                        </button>
+                    </div>
+                    <div class="control">
+                        <button type="button" class="button" onclick="document.getElementById('upload-modal').classList.remove('is-active');">
+                            Hủy
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </section>
+    </div>
+</div>
+
+<script>
+// File input name display
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.querySelector('input[type="file"]');
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const fileName = e.target.files[0]?.name || 'Chưa chọn file';
+            const fileNameSpan = e.target.closest('.file').querySelector('.file-name');
+            if (fileNameSpan) {
+                fileNameSpan.textContent = fileName;
+            }
+        });
+    }
+});
+</script>
+
+<!-- Form ẩn để clear all logs -->
+<form id="clear-all-form" method="post" action="{% url 'nas_management:clear_all_logs' %}{% if selected_nas_id %}?nas_id={{ selected_nas_id }}{% endif %}" style="display: none;">
+    {% csrf_token %}
+</form>
+{% endblock %}
+
+

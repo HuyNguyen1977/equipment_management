@@ -1,0 +1,630 @@
+{% extends 'nas_management/base.html' %}
+
+{% block page_title %}Quản lý File/Folder NAS{% endblock %}
+
+{% block nas_content %}
+<div class="mb-5">
+    <h1 class="title is-3">
+        <span class="icon-text">
+            <span class="icon">
+                <i class="fas fa-folder-open"></i>
+            </span>
+            <span>Quản lý File/Folder</span>
+        </span>
+    </h1>
+    <p class="subtitle">Upload, Download và quản lý files trên NAS</p>
+</div>
+
+<!-- Chọn NAS và đường dẫn -->
+<div class="card mb-5">
+    <div class="card-content">
+        <form method="get" action="{% url 'nas_management:file_manager' %}">
+            <div class="columns">
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Chọn NAS</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="nas_id" onchange="this.form.submit()">
+                                    {% for nas in nas_list %}
+                                        <option value="{{ nas.id }}" {% if selected_nas.id == nas.id %}selected{% endif %}>
+                                            {{ nas.name }} ({{ nas.host }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Đường dẫn</label>
+                        <div class="control">
+                            <input class="input" type="text" name="path" value="{{ current_path }}" placeholder="/">
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-narrow">
+                    <div class="field">
+                        <label class="label">&nbsp;</label>
+                        <div class="control">
+                            <button type="submit" class="button is-primary">Xem</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if selected_nas %}
+<!-- Upload và tạo folder -->
+<div class="card mb-5">
+    <div class="card-content">
+        <div class="columns">
+            <div class="column">
+                <h3 class="title is-5">Upload File</h3>
+                <form id="uploadForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="path" value="{{ current_path }}">
+                    <div class="field">
+                        <div class="file has-name is-fullwidth">
+                            <label class="file-label">
+                                <input class="file-input" type="file" name="file" id="fileInput" required>
+                                <span class="file-cta">
+                                    <span class="file-icon">
+                                        <i class="fas fa-upload"></i>
+                                    </span>
+                                    <span class="file-label">Chọn file</span>
+                                </span>
+                                <span class="file-name" id="fileName">Chưa chọn file</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <button type="submit" class="button is-primary">Upload</button>
+                    </div>
+                </form>
+            </div>
+            <div class="column">
+                <h3 class="title is-5">Tạo Folder</h3>
+                <form id="createFolderForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="path" value="{{ current_path }}">
+                    <div class="field">
+                        <div class="control">
+                            <input class="input" type="text" name="name" placeholder="Tên folder" required>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <button type="submit" class="button is-primary">Tạo Folder</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Danh sách files -->
+<div class="card">
+    <header class="card-header">
+        <p class="card-header-title">Files và Folders ({{ current_path }})</p>
+    </header>
+    <div class="card-content">
+        <div class="content">
+            <table class="table is-fullwidth is-hoverable">
+                <thead>
+                    <tr>
+                        <th>Tên</th>
+                        <th>Loại</th>
+                        <th>Kích thước</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in files %}
+                    <tr>
+                        <td>
+                            {% if file.isdir %}
+                                <span class="icon">
+                                    <i class="fas fa-folder"></i>
+                                </span>
+                            {% else %}
+                                <span class="icon">
+                                    <i class="fas fa-file"></i>
+                                </span>
+                            {% endif %}
+                            {{ file.name }}
+                        </td>
+                        <td>
+                            {% if file.isdir %}
+                                <span class="tag is-info">Folder</span>
+                            {% else %}
+                                <span class="tag is-light">File</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if file.size %}
+                                {% if file.size|add:0 > 0 %}
+                                    {{ file.size|filesizeformat }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if file.isdir %}
+                                <a href="?nas_id={{ selected_nas.id }}&path={{ current_path }}/{{ file.name }}" class="button is-small is-primary">
+                                    <span class="icon">
+                                        <i class="fas fa-folder-open"></i>
+                                    </span>
+                                    <span>Mở</span>
+                                </a>
+                            {% else %}
+                                <a href="{% url 'nas_management:download_file' selected_nas.id %}?path={{ current_path }}/{{ file.name }}" class="button is-small is-success">
+                                    <span class="icon">
+                                        <i class="fas fa-download"></i>
+                                    </span>
+                                    <span>Download</span>
+                                </a>
+                                <button class="button is-small is-danger" onclick="deleteFile('{{ current_path }}/{{ file.name }}')">
+                                    <span class="icon">
+                                        <i class="fas fa-trash"></i>
+                                    </span>
+                                    <span>Xóa</span>
+                                </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="has-text-centered has-text-grey">Thư mục trống</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // File input name display
+    const fileInput = document.getElementById('fileInput');
+    const fileName = document.getElementById('fileName');
+    
+    if (fileInput && fileName) {
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                fileName.textContent = this.files[0].name;
+            } else {
+                fileName.textContent = 'Chưa chọn file';
+            }
+        });
+    }
+    
+    // Upload form
+    const uploadForm = document.getElementById('uploadForm');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const button = this.querySelector('button[type="submit"]');
+            button.disabled = true;
+            button.textContent = 'Đang upload...';
+            
+            fetch('{% url "nas_management:upload_file" selected_nas.id %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Upload thành công!');
+                    location.reload();
+                } else {
+                    alert('Lỗi: ' + (data.error || 'Upload thất bại'));
+                }
+            })
+            .catch(error => {
+                alert('Lỗi: ' + error);
+            })
+            .finally(() => {
+                button.disabled = false;
+                button.textContent = 'Upload';
+            });
+        });
+    }
+    
+    // Create folder form
+    const createFolderForm = document.getElementById('createFolderForm');
+    if (createFolderForm) {
+        createFolderForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const button = this.querySelector('button[type="submit"]');
+            button.disabled = true;
+            button.textContent = 'Đang tạo...';
+            
+            fetch('{% url "nas_management:create_folder" selected_nas.id %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Tạo folder thành công!');
+                    location.reload();
+                } else {
+                    alert('Lỗi: ' + (data.error || 'Tạo folder thất bại'));
+                }
+            })
+            .catch(error => {
+                alert('Lỗi: ' + error);
+            })
+            .finally(() => {
+                button.disabled = false;
+                button.textContent = 'Tạo Folder';
+            });
+        });
+    }
+});
+
+function deleteFile(filePath) {
+    if (!confirm('Bạn có chắc chắn muốn xóa file này?')) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('path', filePath);
+    
+    fetch('{% url "nas_management:delete_file" selected_nas.id %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Xóa thành công!');
+            location.reload();
+        } else {
+            alert('Lỗi: ' + (data.error || 'Xóa thất bại'));
+        }
+    })
+    .catch(error => {
+        alert('Lỗi: ' + error);
+    });
+}
+</script>
+{% endblock %}
+
+
+{% block page_title %}Quản lý File/Folder NAS{% endblock %}
+
+{% block content %}
+<div class="mb-5">
+    <h1 class="title is-3">
+        <span class="icon-text">
+            <span class="icon">
+                <i class="fas fa-folder-open"></i>
+            </span>
+            <span>Quản lý File/Folder</span>
+        </span>
+    </h1>
+    <p class="subtitle">Upload, Download và quản lý files trên NAS</p>
+</div>
+
+<!-- Chọn NAS và đường dẫn -->
+<div class="card mb-5">
+    <div class="card-content">
+        <form method="get" action="{% url 'nas_management:file_manager' %}">
+            <div class="columns">
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Chọn NAS</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="nas_id" onchange="this.form.submit()">
+                                    {% for nas in nas_list %}
+                                        <option value="{{ nas.id }}" {% if selected_nas.id == nas.id %}selected{% endif %}>
+                                            {{ nas.name }} ({{ nas.host }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Đường dẫn</label>
+                        <div class="control">
+                            <input class="input" type="text" name="path" value="{{ current_path }}" placeholder="/">
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-narrow">
+                    <div class="field">
+                        <label class="label">&nbsp;</label>
+                        <div class="control">
+                            <button type="submit" class="button is-primary">Xem</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if selected_nas %}
+<!-- Upload và tạo folder -->
+<div class="card mb-5">
+    <div class="card-content">
+        <div class="columns">
+            <div class="column">
+                <h3 class="title is-5">Upload File</h3>
+                <form id="uploadForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="path" value="{{ current_path }}">
+                    <div class="field">
+                        <div class="file has-name is-fullwidth">
+                            <label class="file-label">
+                                <input class="file-input" type="file" name="file" id="fileInput" required>
+                                <span class="file-cta">
+                                    <span class="file-icon">
+                                        <i class="fas fa-upload"></i>
+                                    </span>
+                                    <span class="file-label">Chọn file</span>
+                                </span>
+                                <span class="file-name" id="fileName">Chưa chọn file</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <button type="submit" class="button is-primary">Upload</button>
+                    </div>
+                </form>
+            </div>
+            <div class="column">
+                <h3 class="title is-5">Tạo Folder</h3>
+                <form id="createFolderForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="path" value="{{ current_path }}">
+                    <div class="field">
+                        <div class="control">
+                            <input class="input" type="text" name="name" placeholder="Tên folder" required>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <button type="submit" class="button is-primary">Tạo Folder</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Danh sách files -->
+<div class="card">
+    <header class="card-header">
+        <p class="card-header-title">Files và Folders ({{ current_path }})</p>
+    </header>
+    <div class="card-content">
+        <div class="content">
+            <table class="table is-fullwidth is-hoverable">
+                <thead>
+                    <tr>
+                        <th>Tên</th>
+                        <th>Loại</th>
+                        <th>Kích thước</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in files %}
+                    <tr>
+                        <td>
+                            {% if file.isdir %}
+                                <span class="icon">
+                                    <i class="fas fa-folder"></i>
+                                </span>
+                            {% else %}
+                                <span class="icon">
+                                    <i class="fas fa-file"></i>
+                                </span>
+                            {% endif %}
+                            {{ file.name }}
+                        </td>
+                        <td>
+                            {% if file.isdir %}
+                                <span class="tag is-info">Folder</span>
+                            {% else %}
+                                <span class="tag is-light">File</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if file.size %}
+                                {% if file.size|add:0 > 0 %}
+                                    {{ file.size|filesizeformat }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if file.isdir %}
+                                <a href="?nas_id={{ selected_nas.id }}&path={{ current_path }}/{{ file.name }}" class="button is-small is-primary">
+                                    <span class="icon">
+                                        <i class="fas fa-folder-open"></i>
+                                    </span>
+                                    <span>Mở</span>
+                                </a>
+                            {% else %}
+                                <a href="{% url 'nas_management:download_file' selected_nas.id %}?path={{ current_path }}/{{ file.name }}" class="button is-small is-success">
+                                    <span class="icon">
+                                        <i class="fas fa-download"></i>
+                                    </span>
+                                    <span>Download</span>
+                                </a>
+                                <button class="button is-small is-danger" onclick="deleteFile('{{ current_path }}/{{ file.name }}')">
+                                    <span class="icon">
+                                        <i class="fas fa-trash"></i>
+                                    </span>
+                                    <span>Xóa</span>
+                                </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="has-text-centered has-text-grey">Thư mục trống</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // File input name display
+    const fileInput = document.getElementById('fileInput');
+    const fileName = document.getElementById('fileName');
+    
+    if (fileInput && fileName) {
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                fileName.textContent = this.files[0].name;
+            } else {
+                fileName.textContent = 'Chưa chọn file';
+            }
+        });
+    }
+    
+    // Upload form
+    const uploadForm = document.getElementById('uploadForm');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const button = this.querySelector('button[type="submit"]');
+            button.disabled = true;
+            button.textContent = 'Đang upload...';
+            
+            fetch('{% url "nas_management:upload_file" selected_nas.id %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Upload thành công!');
+                    location.reload();
+                } else {
+                    alert('Lỗi: ' + (data.error || 'Upload thất bại'));
+                }
+            })
+            .catch(error => {
+                alert('Lỗi: ' + error);
+            })
+            .finally(() => {
+                button.disabled = false;
+                button.textContent = 'Upload';
+            });
+        });
+    }
+    
+    // Create folder form
+    const createFolderForm = document.getElementById('createFolderForm');
+    if (createFolderForm) {
+        createFolderForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const button = this.querySelector('button[type="submit"]');
+            button.disabled = true;
+            button.textContent = 'Đang tạo...';
+            
+            fetch('{% url "nas_management:create_folder" selected_nas.id %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Tạo folder thành công!');
+                    location.reload();
+                } else {
+                    alert('Lỗi: ' + (data.error || 'Tạo folder thất bại'));
+                }
+            })
+            .catch(error => {
+                alert('Lỗi: ' + error);
+            })
+            .finally(() => {
+                button.disabled = false;
+                button.textContent = 'Tạo Folder';
+            });
+        });
+    }
+});
+
+function deleteFile(filePath) {
+    if (!confirm('Bạn có chắc chắn muốn xóa file này?')) {
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('path', filePath);
+    
+    fetch('{% url "nas_management:delete_file" selected_nas.id %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Xóa thành công!');
+            location.reload();
+        } else {
+            alert('Lỗi: ' + (data.error || 'Xóa thất bại'));
+        }
+    })
+    .catch(error => {
+        alert('Lỗi: ' + error);
+    });
+}
+</script>
+{% endblock %}
+
+

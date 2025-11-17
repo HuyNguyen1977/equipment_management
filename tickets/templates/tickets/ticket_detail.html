@@ -141,7 +141,7 @@
                         <span class="icon">
                             <i class="fas fa-comments"></i>
                         </span>
-                        <span>Bình luận ({{ comments.count }})</span>
+                        <span>Bình luận ({{ comments_count }})</span>
                     </span>
                 </p>
             </header>
@@ -212,11 +212,38 @@
                         <p class="has-text-grey">Chưa có bình luận nào</p>
                     {% endfor %}
                 </div>
+                
+                <!-- Phân trang cho comments -->
+                {% if comments.has_other_pages %}
+                <nav class="pagination is-centered no-print" role="navigation" aria-label="pagination">
+                    {% if comments.has_previous %}
+                        <a class="pagination-previous" href="?comments_page={{ comments.previous_page_number }}{% if request.GET.attachments_page %}&attachments_page={{ request.GET.attachments_page }}{% endif %}">Trước</a>
+                    {% else %}
+                        <a class="pagination-previous" disabled>Trước</a>
+                    {% endif %}
+                    
+                    {% if comments.has_next %}
+                        <a class="pagination-next" href="?comments_page={{ comments.next_page_number }}{% if request.GET.attachments_page %}&attachments_page={{ request.GET.attachments_page }}{% endif %}">Sau</a>
+                    {% else %}
+                        <a class="pagination-next" disabled>Sau</a>
+                    {% endif %}
+                    
+                    <ul class="pagination-list">
+                        {% for num in comments.paginator.page_range %}
+                            {% if comments.number == num %}
+                                <li><a class="pagination-link is-current" aria-label="Page {{ num }}" aria-current="page">{{ num }}</a></li>
+                            {% elif num > comments.number|add:'-3' and num < comments.number|add:'3' %}
+                                <li><a class="pagination-link" href="?comments_page={{ num }}{% if request.GET.attachments_page %}&attachments_page={{ request.GET.attachments_page }}{% endif %}" aria-label="Goto page {{ num }}">{{ num }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </nav>
+                {% endif %}
             </div>
         </div>
 
         <!-- File đính kèm -->
-        {% if attachments %}
+        {% if attachments_count > 0 %}
         <div class="card">
             <header class="card-header">
                 <p class="card-header-title">
@@ -224,7 +251,7 @@
                         <span class="icon">
                             <i class="fas fa-paperclip"></i>
                         </span>
-                        <span>File đính kèm ({{ attachments.count }})</span>
+                        <span>File đính kèm ({{ attachments_count }})</span>
                     </span>
                 </p>
             </header>
@@ -259,6 +286,33 @@
                         </div>
                     {% endfor %}
                 </div>
+                
+                <!-- Phân trang cho attachments -->
+                {% if attachments.has_other_pages %}
+                <nav class="pagination is-centered no-print" role="navigation" aria-label="pagination">
+                    {% if attachments.has_previous %}
+                        <a class="pagination-previous" href="?attachments_page={{ attachments.previous_page_number }}{% if request.GET.comments_page %}&comments_page={{ request.GET.comments_page }}{% endif %}">Trước</a>
+                    {% else %}
+                        <a class="pagination-previous" disabled>Trước</a>
+                    {% endif %}
+                    
+                    {% if attachments.has_next %}
+                        <a class="pagination-next" href="?attachments_page={{ attachments.next_page_number }}{% if request.GET.comments_page %}&comments_page={{ request.GET.comments_page }}{% endif %}">Sau</a>
+                    {% else %}
+                        <a class="pagination-next" disabled>Sau</a>
+                    {% endif %}
+                    
+                    <ul class="pagination-list">
+                        {% for num in attachments.paginator.page_range %}
+                            {% if attachments.number == num %}
+                                <li><a class="pagination-link is-current" aria-label="Page {{ num }}" aria-current="page">{{ num }}</a></li>
+                            {% elif num > attachments.number|add:'-3' and num < attachments.number|add:'3' %}
+                                <li><a class="pagination-link" href="?attachments_page={{ num }}{% if request.GET.comments_page %}&comments_page={{ request.GET.comments_page }}{% endif %}" aria-label="Goto page {{ num }}">{{ num }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </nav>
+                {% endif %}
             </div>
         </div>
         {% endif %}

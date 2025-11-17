@@ -18,6 +18,7 @@ urlpatterns = [
     path('', include('equipment.urls')),
     path('tickets/', include('tickets.urls')),
     path('renewals/', include('renewals.urls')),
+    path('nas/', include('nas_management.urls')),
 ]
 
 if settings.DEBUG:

@@ -10,6 +10,7 @@ from django.views.decorators.http import require_http_methods
 from django.core.mail import send_mail, EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.conf import settings
+from django.urls import reverse
 from datetime import datetime, timedelta
 from .models import Ticket, TicketComment, TicketAttachment, Company, Department, TicketCategory
 from .forms import TicketForm, TicketUpdateForm, TicketCommentForm, TicketAttachmentForm
@@ -188,10 +189,29 @@ def ticket_detail(request, ticket_number):
     if not request.user.is_staff:
         comments = comments.filter(is_internal=False)
     
+    # Phân trang cho comments
+    comments_paginator = Paginator(comments.order_by('created_at'), 10)
+    comments_page = request.GET.get('comments_page', 1)
+    try:
+        comments_page_obj = comments_paginator.get_page(comments_page)
+    except:
+        comments_page_obj = comments_paginator.get_page(1)
+    
+    # Phân trang cho attachments
+    attachments = ticket.attachments.all()
+    attachments_paginator = Paginator(attachments.order_by('-created_at'), 10)
+    attachments_page = request.GET.get('attachments_page', 1)
+    try:
+        attachments_page_obj = attachments_paginator.get_page(attachments_page)
+    except:
+        attachments_page_obj = attachments_paginator.get_page(1)
+    
     context = {
         'ticket': ticket,
-        'comments': comments,
-        'attachments': ticket.attachments.all(),
+        'comments': comments_page_obj,
+        'comments_count': comments.count(),
+        'attachments': attachments_page_obj,
+        'attachments_count': attachments.count(),
         'update_form': update_form,
         'comment_form': comment_form,
         'attachment_form': attachment_form,
@@ -261,8 +281,22 @@ def ticket_comment(request, ticket_number):
             ticket.updated_at = timezone.now()
             ticket.save(update_fields=['updated_at'])
             
+            # Tính toán trang cuối cùng của comments để redirect về đó
+            comments = ticket.comments.all()
+            if not request.user.is_staff:
+                comments = comments.filter(is_internal=False)
+            comments_paginator = Paginator(comments.order_by('created_at'), 10)
+            last_page = comments_paginator.num_pages if comments_paginator.num_pages > 0 else 1
+            
+            # Giữ nguyên trang attachments nếu có
+            attachments_page = request.GET.get('attachments_page', '')
+            redirect_url = reverse('tickets:ticket_detail', kwargs={'ticket_number': ticket_number})
+            redirect_url += f"?comments_page={last_page}"
+            if attachments_page:
+                redirect_url += f"&attachments_page={attachments_page}"
+            
             messages.success(request, 'Đã thêm bình luận!')
-            return redirect('tickets:ticket_detail', ticket_number=ticket_number)
+            return redirect(redirect_url)
     
     return redirect('tickets:ticket_detail', ticket_number=ticket_number)
 

@@ -1,0 +1,408 @@
+{% extends 'nas_management/base.html' %}
+
+{% block page_title %}Lịch sử đăng nhập NAS{% endblock %}
+
+{% block nas_content %}
+<div class="mb-5">
+    <h1 class="title is-3">
+        <span class="icon-text">
+            <span class="icon">
+                <i class="fas fa-history"></i>
+            </span>
+            <span>Lịch sử đăng nhập NAS</span>
+        </span>
+    </h1>
+    <p class="subtitle">Theo dõi và phát hiện đăng nhập thất bại để chống hack</p>
+</div>
+
+<!-- Filter -->
+<div class="card mb-5">
+    <div class="card-content">
+        <form method="get" action="{% url 'nas_management:login_history' %}">
+            <div class="columns">
+                <div class="column">
+                    <div class="field">
+                        <label class="label">NAS</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="nas_id">
+                                    <option value="">Tất cả</option>
+                                    {% for nas in nas_list %}
+                                        <option value="{{ nas.id }}" {% if selected_nas_id == nas.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ nas.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Username</label>
+                        <div class="control">
+                            <input class="input" type="text" name="username" value="{{ username_filter }}" placeholder="Tìm kiếm username">
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Trạng thái</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="is_success">
+                                    <option value="">Tất cả</option>
+                                    <option value="1" {% if is_success_filter == "1" %}selected{% endif %}>Thành công</option>
+                                    <option value="0" {% if is_success_filter == "0" %}selected{% endif %}>Thất bại</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Từ ngày</label>
+                        <div class="control">
+                            <input class="input" type="date" name="date_from" value="{{ date_from }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Đến ngày</label>
+                        <div class="control">
+                            <input class="input" type="date" name="date_to" value="{{ date_to }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-narrow">
+                    <div class="field">
+                        <label class="label">&nbsp;</label>
+                        <div class="control">
+                            <button type="submit" class="button is-primary">Tìm kiếm</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Thống kê login failures -->
+{% if failure_stats %}
+<div class="card mb-5">
+    <header class="card-header">
+        <p class="card-header-title">Top IP có nhiều lần đăng nhập thất bại</p>
+    </header>
+    <div class="card-content">
+        <div class="content">
+            <table class="table is-fullwidth">
+                <thead>
+                    <tr>
+                        <th>IP Address</th>
+                        <th>Số lần thất bại</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in failure_stats %}
+                    <tr>
+                        <td><strong>{{ stat.ip_address }}</strong></td>
+                        <td><span class="tag is-danger">{{ stat.count }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Danh sách login history -->
+<div class="card">
+    <header class="card-header">
+        <p class="card-header-title">
+            Danh sách đăng nhập ({{ page_obj.paginator.count }} bản ghi)
+        </p>
+        {% if selected_nas_id %}
+        <div class="card-header-icon">
+            <a href="{% url 'nas_management:sync_login_history' selected_nas_id %}" class="button is-small is-primary">
+                <span class="icon">
+                    <i class="fas fa-sync"></i>
+                </span>
+                <span>Đồng bộ từ NAS</span>
+            </a>
+        </div>
+        {% endif %}
+    </header>
+    <div class="card-content">
+        <div class="content">
+            <table class="table is-fullwidth is-hoverable">
+                <thead>
+                    <tr>
+                        <th>NAS</th>
+                        <th>Username</th>
+                        <th>IP Address</th>
+                        <th>Thời gian đăng nhập</th>
+                        <th>Trạng thái</th>
+                        <th>Lý do thất bại</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for login in login_history %}
+                    <tr>
+                        <td>{{ login.nas.name }}</td>
+                        <td><strong>{{ login.username }}</strong></td>
+                        <td>{{ login.ip_address }}</td>
+                        <td>{{ login.login_time|date:"d/m/Y H:i:s" }}</td>
+                        <td>
+                            {% if login.is_success %}
+                                <span class="tag is-success">Thành công</span>
+                            {% else %}
+                                <span class="tag is-danger">Thất bại</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ login.failure_reason|default:"-" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="has-text-centered has-text-grey">Chưa có dữ liệu</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Phân trang -->
+        {% if page_obj.has_other_pages %}
+        <nav class="pagination is-centered" role="navigation" aria-label="pagination">
+            {% if page_obj.has_previous %}
+                <a class="pagination-previous" href="?page={{ page_obj.previous_page_number }}{% if selected_nas_id %}&nas_id={{ selected_nas_id }}{% endif %}{% if username_filter %}&username={{ username_filter }}{% endif %}{% if is_success_filter %}&is_success={{ is_success_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">Trước</a>
+            {% else %}
+                <a class="pagination-previous" disabled>Trước</a>
+            {% endif %}
+            
+            {% if page_obj.has_next %}
+                <a class="pagination-next" href="?page={{ page_obj.next_page_number }}{% if selected_nas_id %}&nas_id={{ selected_nas_id }}{% endif %}{% if username_filter %}&username={{ username_filter }}{% endif %}{% if is_success_filter %}&is_success={{ is_success_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">Sau</a>
+            {% else %}
+                <a class="pagination-next" disabled>Sau</a>
+            {% endif %}
+            
+            <ul class="pagination-list">
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li><a class="pagination-link is-current" aria-label="Page {{ num }}" aria-current="page">{{ num }}</a></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li><a class="pagination-link" href="?page={{ num }}{% if selected_nas_id %}&nas_id={{ selected_nas_id }}{% endif %}{% if username_filter %}&username={{ username_filter }}{% endif %}{% if is_success_filter %}&is_success={{ is_success_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Goto page {{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+
+
+{% block page_title %}Lịch sử đăng nhập NAS{% endblock %}
+
+{% block content %}
+<div class="mb-5">
+    <h1 class="title is-3">
+        <span class="icon-text">
+            <span class="icon">
+                <i class="fas fa-history"></i>
+            </span>
+            <span>Lịch sử đăng nhập NAS</span>
+        </span>
+    </h1>
+    <p class="subtitle">Theo dõi và phát hiện đăng nhập thất bại để chống hack</p>
+</div>
+
+<!-- Filter -->
+<div class="card mb-5">
+    <div class="card-content">
+        <form method="get" action="{% url 'nas_management:login_history' %}">
+            <div class="columns">
+                <div class="column">
+                    <div class="field">
+                        <label class="label">NAS</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="nas_id">
+                                    <option value="">Tất cả</option>
+                                    {% for nas in nas_list %}
+                                        <option value="{{ nas.id }}" {% if selected_nas_id == nas.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ nas.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Username</label>
+                        <div class="control">
+                            <input class="input" type="text" name="username" value="{{ username_filter }}" placeholder="Tìm kiếm username">
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Trạng thái</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="is_success">
+                                    <option value="">Tất cả</option>
+                                    <option value="1" {% if is_success_filter == "1" %}selected{% endif %}>Thành công</option>
+                                    <option value="0" {% if is_success_filter == "0" %}selected{% endif %}>Thất bại</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Từ ngày</label>
+                        <div class="control">
+                            <input class="input" type="date" name="date_from" value="{{ date_from }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Đến ngày</label>
+                        <div class="control">
+                            <input class="input" type="date" name="date_to" value="{{ date_to }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-narrow">
+                    <div class="field">
+                        <label class="label">&nbsp;</label>
+                        <div class="control">
+                            <button type="submit" class="button is-primary">Tìm kiếm</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Thống kê login failures -->
+{% if failure_stats %}
+<div class="card mb-5">
+    <header class="card-header">
+        <p class="card-header-title">Top IP có nhiều lần đăng nhập thất bại</p>
+    </header>
+    <div class="card-content">
+        <div class="content">
+            <table class="table is-fullwidth">
+                <thead>
+                    <tr>
+                        <th>IP Address</th>
+                        <th>Số lần thất bại</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in failure_stats %}
+                    <tr>
+                        <td><strong>{{ stat.ip_address }}</strong></td>
+                        <td><span class="tag is-danger">{{ stat.count }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Danh sách login history -->
+<div class="card">
+    <header class="card-header">
+        <p class="card-header-title">
+            Danh sách đăng nhập ({{ page_obj.paginator.count }} bản ghi)
+        </p>
+        {% if selected_nas_id %}
+        <div class="card-header-icon">
+            <a href="{% url 'nas_management:sync_login_history' selected_nas_id %}" class="button is-small is-primary">
+                <span class="icon">
+                    <i class="fas fa-sync"></i>
+                </span>
+                <span>Đồng bộ từ NAS</span>
+            </a>
+        </div>
+        {% endif %}
+    </header>
+    <div class="card-content">
+        <div class="content">
+            <table class="table is-fullwidth is-hoverable">
+                <thead>
+                    <tr>
+                        <th>NAS</th>
+                        <th>Username</th>
+                        <th>IP Address</th>
+                        <th>Thời gian đăng nhập</th>
+                        <th>Trạng thái</th>
+                        <th>Lý do thất bại</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for login in login_history %}
+                    <tr>
+                        <td>{{ login.nas.name }}</td>
+                        <td><strong>{{ login.username }}</strong></td>
+                        <td>{{ login.ip_address }}</td>
+                        <td>{{ login.login_time|date:"d/m/Y H:i:s" }}</td>
+                        <td>
+                            {% if login.is_success %}
+                                <span class="tag is-success">Thành công</span>
+                            {% else %}
+                                <span class="tag is-danger">Thất bại</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ login.failure_reason|default:"-" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="has-text-centered has-text-grey">Chưa có dữ liệu</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Phân trang -->
+        {% if page_obj.has_other_pages %}
+        <nav class="pagination is-centered" role="navigation" aria-label="pagination">
+            {% if page_obj.has_previous %}
+                <a class="pagination-previous" href="?page={{ page_obj.previous_page_number }}{% if selected_nas_id %}&nas_id={{ selected_nas_id }}{% endif %}{% if username_filter %}&username={{ username_filter }}{% endif %}{% if is_success_filter %}&is_success={{ is_success_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">Trước</a>
+            {% else %}
+                <a class="pagination-previous" disabled>Trước</a>
+            {% endif %}
+            
+            {% if page_obj.has_next %}
+                <a class="pagination-next" href="?page={{ page_obj.next_page_number }}{% if selected_nas_id %}&nas_id={{ selected_nas_id }}{% endif %}{% if username_filter %}&username={{ username_filter }}{% endif %}{% if is_success_filter %}&is_success={{ is_success_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}">Sau</a>
+            {% else %}
+                <a class="pagination-next" disabled>Sau</a>
+            {% endif %}
+            
+            <ul class="pagination-list">
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li><a class="pagination-link is-current" aria-label="Page {{ num }}" aria-current="page">{{ num }}</a></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li><a class="pagination-link" href="?page={{ num }}{% if selected_nas_id %}&nas_id={{ selected_nas_id }}{% endif %}{% if username_filter %}&username={{ username_filter }}{% endif %}{% if is_success_filter %}&is_success={{ is_success_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" aria-label="Goto page {{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

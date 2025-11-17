@@ -1,0 +1,479 @@
+{% extends 'nas_management/base.html' %}
+
+{% block page_title %}Dashboard {{ log_type_display|default:"Logs NAS" }}{% endblock %}
+
+{% block nas_content %}
+<div class="mb-5">
+    <h1 class="title is-3">
+        <span class="icon-text">
+            <span class="icon">
+                <i class="fas fa-chart-line"></i>
+            </span>
+            <span>Dashboard {{ log_type_display|default:"Logs NAS" }}</span>
+        </span>
+    </h1>
+    <p class="subtitle">Thống kê và phân tích {{ log_type_display|lower|default:"logs của hệ thống NAS" }}</p>
+    
+    <!-- Navigation buttons -->
+    <div class="buttons mt-3">
+        <a href="{% url 'nas_management:logs_dashboard' %}{% if selected_nas_id %}?nas_id={{ selected_nas_id }}{% endif %}" class="button {% if not log_type %}is-primary{% else %}is-light{% endif %}">
+            <span class="icon"><i class="fas fa-chart-bar"></i></span>
+            <span>Tất cả</span>
+        </a>
+        <a href="{% url 'nas_management:syslog_dashboard' %}{% if selected_nas_id %}?nas_id={{ selected_nas_id }}{% endif %}" class="button {% if log_type == 'syslog' %}is-primary{% else %}is-light{% endif %}">
+            <span class="icon"><i class="fas fa-server"></i></span>
+            <span>System Logs</span>
+        </a>
+        <a href="{% url 'nas_management:connectlog_dashboard' %}{% if selected_nas_id %}?nas_id={{ selected_nas_id }}{% endif %}" class="button {% if log_type == 'connectlog' %}is-primary{% else %}is-light{% endif %}">
+            <span class="icon"><i class="fas fa-network-wired"></i></span>
+            <span>Connection Logs</span>
+        </a>
+        <a href="{% url 'nas_management:filexferlog_dashboard' %}{% if selected_nas_id %}?nas_id={{ selected_nas_id }}{% endif %}" class="button {% if log_type == 'filexferlog' %}is-primary{% else %}is-light{% endif %}">
+            <span class="icon"><i class="fas fa-file-upload"></i></span>
+            <span>File Transfer Logs</span>
+        </a>
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="card mb-5">
+    <div class="card-content">
+        <form method="get" action="{% if log_type == 'syslog' %}{% url 'nas_management:syslog_dashboard' %}{% elif log_type == 'connectlog' %}{% url 'nas_management:connectlog_dashboard' %}{% elif log_type == 'filexferlog' %}{% url 'nas_management:filexferlog_dashboard' %}{% else %}{% url 'nas_management:logs_dashboard' %}{% endif %}">
+            <div class="columns">
+                <div class="column">
+                    <div class="field">
+                        <label class="label">NAS</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="nas_id">
+                                    <option value="">Tất cả</option>
+                                    {% for nas in nas_list %}
+                                        <option value="{{ nas.id }}" {% if selected_nas_id == nas.id|stringformat:"s" or selected_nas_id|add:0 == nas.id %}selected{% endif %}>
+                                            {{ nas.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Từ ngày</label>
+                        <div class="control">
+                            <input class="input" type="date" name="date_from" value="{{ date_from }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Đến ngày</label>
+                        <div class="control">
+                            <input class="input" type="date" name="date_to" value="{{ date_to }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-narrow">
+                    <div class="field">
+                        <label class="label">&nbsp;</label>
+                        <div class="control">
+                            <button type="submit" class="button is-primary is-fullwidth">
+                                <span class="icon"><i class="fas fa-search"></i></span>
+                                <span>Lọc</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Thống kê tổng quan -->
+<div class="columns mb-5">
+    <div class="column">
+        <div class="card">
+            <div class="card-content">
+                <p class="heading">Tổng số logs</p>
+                <p class="title is-2">{{ total_logs|default:0 }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="column">
+        <div class="card">
+            <div class="card-content">
+                <p class="heading">Info</p>
+                <p class="title is-2 has-text-info">{{ level_stats.info|default:0 }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="column">
+        <div class="card">
+            <div class="card-content">
+                <p class="heading">Warning</p>
+                <p class="title is-2 has-text-warning">{{ level_stats.warning|default:0 }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="column">
+        <div class="card">
+            <div class="card-content">
+                <p class="heading">Error</p>
+                <p class="title is-2 has-text-danger">{{ level_stats.error|default:0 }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="column">
+        <div class="card">
+            <div class="card-content">
+                <p class="heading">Critical</p>
+                <p class="title is-2 has-text-danger">{{ level_stats.critical|default:0 }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Biểu đồ logs theo thời gian -->
+<div class="card mb-5">
+    <header class="card-header">
+        <p class="card-header-title">Logs theo thời gian (30 ngày gần nhất)</p>
+    </header>
+    <div class="card-content">
+        <canvas id="logsChart" width="400" height="150"></canvas>
+    </div>
+</div>
+
+<!-- Thống kê theo NAS và Category -->
+<div class="columns mb-5">
+    <div class="column">
+        <div class="card">
+            <header class="card-header">
+                <p class="card-header-title">Logs theo NAS</p>
+            </header>
+            <div class="card-content">
+                <div class="content">
+                    {% for item in logs_by_nas %}
+                    <div class="mb-3">
+                        <p class="has-text-weight-bold">{{ item.nas__name|default:"Unknown" }}</p>
+                        <progress class="progress is-primary" value="{{ item.count }}" max="{{ total_logs }}">{{ item.count }}</progress>
+                        <p class="is-size-7">{{ item.count }} logs</p>
+                    </div>
+                    {% empty %}
+                    <p class="has-text-grey">Chưa có dữ liệu</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="column">
+        <div class="card">
+            <header class="card-header">
+                <p class="card-header-title">Top Categories</p>
+            </header>
+            <div class="card-content">
+                <div class="content">
+                    <table class="table is-fullwidth">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Số lượng</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in logs_by_category %}
+                            <tr>
+                                <td>{{ item.category|default:"-" }}</td>
+                                <td><strong>{{ item.count }}</strong></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2" class="has-text-grey">Chưa có dữ liệu</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Sources -->
+<div class="card mb-5">
+    <header class="card-header">
+        <p class="card-header-title">Top Sources</p>
+    </header>
+    <div class="card-content">
+        <div class="content">
+            <table class="table is-fullwidth is-hoverable">
+                <thead>
+                    <tr>
+                        <th>Source</th>
+                        <th>Số lượng</th>
+                        <th>Tỷ lệ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in logs_by_source %}
+                    <tr>
+                        <td>{{ item.source|default:"-" }}</td>
+                        <td><strong>{{ item.count }}</strong></td>
+                        <td>
+                            {% widthratio item.count total_logs 100 as percentage %}
+                            <progress class="progress is-small" value="{{ item.count }}" max="{{ total_logs }}">{{ percentage }}%</progress>
+                            <span class="is-size-7">{{ percentage }}%</span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="has-text-grey">Chưa có dữ liệu</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Thống kê đặc biệt cho filexferlog -->
+{% if log_type == 'filexferlog' and filexfer_stats %}
+<div class="card mb-5">
+    <header class="card-header">
+        <p class="card-header-title">Thống kê File Transfer</p>
+    </header>
+    <div class="card-content">
+        <div class="columns">
+            <div class="column">
+                <h4 class="title is-5">Theo thao tác</h4>
+                <table class="table is-fullwidth">
+                    <thead>
+                        <tr>
+                            <th>Thao tác</th>
+                            <th>Số lượng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in filexfer_stats.by_operation %}
+                        <tr>
+                            <td>{{ item.operation|default:"-" }}</td>
+                            <td><strong>{{ item.count }}</strong></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="2" class="has-text-grey">Chưa có dữ liệu</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="column">
+                <h4 class="title is-5">Top Files</h4>
+                <table class="table is-fullwidth">
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>Số lần truy cập</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in filexfer_stats.top_files %}
+                        <tr>
+                            <td><code class="is-size-7">{{ item.file_path|truncatechars:60 }}</code></td>
+                            <td><strong>{{ item.count }}</strong></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="2" class="has-text-grey">Chưa có dữ liệu</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Logs gần đây -->
+<div class="card">
+    <header class="card-header">
+        <p class="card-header-title">Logs gần đây</p>
+        <div class="card-header-icon">
+            <a href="{% url 'nas_management:nas_logs' %}{% if selected_nas_id %}?nas_id={{ selected_nas_id }}{% if log_type %}&log_type={{ log_type }}{% endif %}{% endif %}" class="button is-small is-link">
+                <span class="icon"><i class="fas fa-list"></i></span>
+                <span>Xem tất cả</span>
+            </a>
+        </div>
+    </header>
+    <div class="card-content">
+        <div class="content">
+            <table class="table is-fullwidth is-hoverable">
+                <thead>
+                    <tr>
+                        <th>NAS</th>
+                        <th>Mức độ</th>
+                        <th>Category</th>
+                        <th>Nội dung</th>
+                        <th>Source</th>
+                        <th>Thời gian</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in recent_logs %}
+                    <tr>
+                        <td>{{ log.nas.name }}</td>
+                        <td>
+                            {% if log.level == 'critical' %}
+                                <span class="tag is-danger">Critical</span>
+                            {% elif log.level == 'error' %}
+                                <span class="tag is-danger">Error</span>
+                            {% elif log.level == 'warning' %}
+                                <span class="tag is-warning">Warning</span>
+                            {% else %}
+                                <span class="tag is-info">Info</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ log.category|default:"-" }}</td>
+                        <td>{{ log.message|truncatewords:15 }}</td>
+                        <td>{{ log.source|default:"-" }}</td>
+                        <td>{{ log.timestamp|date:"d/m/Y H:i:s" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="has-text-centered has-text-grey">Chưa có dữ liệu</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if daily_stats %}
+    const ctx = document.getElementById('logsChart').getContext('2d');
+    const labels = [
+        {% for stat in daily_stats %}
+        '{{ stat.date|date:"d/m" }}'{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    {% if log_type %}
+    // Chart cho từng loại log riêng
+    const infoData = [
+        {% for stat in daily_stats %}
+        {{ stat.info }}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    const warningData = [
+        {% for stat in daily_stats %}
+        {{ stat.warning }}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    const errorData = [
+        {% for stat in daily_stats %}
+        {{ stat.error }}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    const criticalData = [
+        {% for stat in daily_stats %}
+        {{ stat.critical }}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Info',
+                data: infoData,
+                borderColor: 'rgb(54, 162, 235)',
+                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                tension: 0.1
+            }, {
+                label: 'Warning',
+                data: warningData,
+                borderColor: 'rgb(255, 206, 86)',
+                backgroundColor: 'rgba(255, 206, 86, 0.1)',
+                tension: 0.1
+            }, {
+                label: 'Error',
+                data: errorData,
+                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                tension: 0.1
+            }, {
+                label: 'Critical',
+                data: criticalData,
+                borderColor: 'rgb(220, 53, 69)',
+                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                tension: 0.1
+            }]
+        },
+    {% else %}
+    // Chart tổng hợp cho tất cả logs
+    const syslogData = [
+        {% for stat in daily_stats %}
+        {{ stat.syslog }}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    const connectlogData = [
+        {% for stat in daily_stats %}
+        {{ stat.connectlog }}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    const filexferlogData = [
+        {% for stat in daily_stats %}
+        {{ stat.filexferlog }}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'System Logs',
+                data: syslogData,
+                borderColor: 'rgb(54, 162, 235)',
+                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                tension: 0.1
+            }, {
+                label: 'Connection Logs',
+                data: connectlogData,
+                borderColor: 'rgb(255, 206, 86)',
+                backgroundColor: 'rgba(255, 206, 86, 0.1)',
+                tension: 0.1
+            }, {
+                label: 'File Transfer Logs',
+                data: filexferlogData,
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                tension: 0.1
+            }]
+        },
+    {% endif %}
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    stacked: false
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: false
+                }
+            }
+        }
+    });
+    {% endif %}
+});
+</script>
+{% endblock %}
+

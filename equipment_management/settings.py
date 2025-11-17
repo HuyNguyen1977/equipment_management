@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'equipment',
     'tickets',
     'renewals',
+    'nas_management',
 ]
 
 MIDDLEWARE = [

@@ -1,0 +1,316 @@
+{% extends 'nas_management/base.html' %}
+
+{% block page_title %}Lịch sử thao tác File{% endblock %}
+
+{% block nas_content %}
+<div class="mb-5">
+    <h1 class="title is-3">
+        <span class="icon-text">
+            <span class="icon">
+                <i class="fas fa-history"></i>
+            </span>
+            <span>Lịch sử thao tác File</span>
+        </span>
+    </h1>
+    <p class="subtitle">Theo dõi các thao tác upload/download/delete trên NAS</p>
+</div>
+
+<!-- Filter -->
+<div class="card mb-5">
+    <div class="card-content">
+        <form method="get" action="{% url 'nas_management:file_operations' %}">
+            <div class="columns">
+                <div class="column">
+                    <div class="field">
+                        <label class="label">NAS</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="nas_id">
+                                    <option value="">Tất cả</option>
+                                    {% for nas in nas_list %}
+                                        <option value="{{ nas.id }}" {% if selected_nas_id == nas.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ nas.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Thao tác</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="operation">
+                                    <option value="">Tất cả</option>
+                                    <option value="upload" {% if operation_filter == "upload" %}selected{% endif %}>Upload</option>
+                                    <option value="download" {% if operation_filter == "download" %}selected{% endif %}>Download</option>
+                                    <option value="delete" {% if operation_filter == "delete" %}selected{% endif %}>Delete</option>
+                                    <option value="create_folder" {% if operation_filter == "create_folder" %}selected{% endif %}>Create Folder</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-narrow">
+                    <div class="field">
+                        <label class="label">&nbsp;</label>
+                        <div class="control">
+                            <button type="submit" class="button is-primary">Tìm kiếm</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Danh sách operations -->
+<div class="card">
+    <header class="card-header">
+        <p class="card-header-title">
+            Danh sách thao tác ({{ page_obj.paginator.count }} bản ghi)
+        </p>
+    </header>
+    <div class="card-content">
+        <div class="content">
+            <table class="table is-fullwidth is-hoverable">
+                <thead>
+                    <tr>
+                        <th>NAS</th>
+                        <th>Người thực hiện</th>
+                        <th>Thao tác</th>
+                        <th>File/Folder</th>
+                        <th>Kích thước</th>
+                        <th>IP Address</th>
+                        <th>Thời gian</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for operation in operations %}
+                    <tr>
+                        <td>{{ operation.nas.name }}</td>
+                        <td>{{ operation.user.get_full_name|default:operation.user.username }}</td>
+                        <td>
+                            <span class="tag is-info">{{ operation.get_operation_display }}</span>
+                        </td>
+                        <td>{{ operation.file_path|truncatewords:10 }}</td>
+                        <td>
+                            {% if operation.file_size %}
+                                {{ operation.file_size|filesizeformat }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ operation.ip_address|default:"-" }}</td>
+                        <td>{{ operation.timestamp|date:"d/m/Y H:i:s" }}</td>
+                        <td>
+                            {% if operation.is_success %}
+                                <span class="tag is-success">Thành công</span>
+                            {% else %}
+                                <span class="tag is-danger">Thất bại</span>
+                                {% if operation.error_message %}
+                                    <br><small class="has-text-danger">{{ operation.error_message|truncatewords:5 }}</small>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="has-text-centered has-text-grey">Chưa có dữ liệu</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Phân trang -->
+        {% if page_obj.has_other_pages %}
+        <nav class="pagination is-centered" role="navigation" aria-label="pagination">
+            {% if page_obj.has_previous %}
+                <a class="pagination-previous" href="?page={{ page_obj.previous_page_number }}{% if selected_nas_id %}&nas_id={{ selected_nas_id }}{% endif %}{% if operation_filter %}&operation={{ operation_filter }}{% endif %}">Trước</a>
+            {% else %}
+                <a class="pagination-previous" disabled>Trước</a>
+            {% endif %}
+            
+            {% if page_obj.has_next %}
+                <a class="pagination-next" href="?page={{ page_obj.next_page_number }}{% if selected_nas_id %}&nas_id={{ selected_nas_id }}{% endif %}{% if operation_filter %}&operation={{ operation_filter }}{% endif %}">Sau</a>
+            {% else %}
+                <a class="pagination-next" disabled>Sau</a>
+            {% endif %}
+            
+            <ul class="pagination-list">
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li><a class="pagination-link is-current" aria-label="Page {{ num }}" aria-current="page">{{ num }}</a></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li><a class="pagination-link" href="?page={{ num }}{% if selected_nas_id %}&nas_id={{ selected_nas_id }}{% endif %}{% if operation_filter %}&operation={{ operation_filter }}{% endif %}" aria-label="Goto page {{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+
+
+{% block page_title %}Lịch sử thao tác File{% endblock %}
+
+{% block content %}
+<div class="mb-5">
+    <h1 class="title is-3">
+        <span class="icon-text">
+            <span class="icon">
+                <i class="fas fa-history"></i>
+            </span>
+            <span>Lịch sử thao tác File</span>
+        </span>
+    </h1>
+    <p class="subtitle">Theo dõi các thao tác upload/download/delete trên NAS</p>
+</div>
+
+<!-- Filter -->
+<div class="card mb-5">
+    <div class="card-content">
+        <form method="get" action="{% url 'nas_management:file_operations' %}">
+            <div class="columns">
+                <div class="column">
+                    <div class="field">
+                        <label class="label">NAS</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="nas_id">
+                                    <option value="">Tất cả</option>
+                                    {% for nas in nas_list %}
+                                        <option value="{{ nas.id }}" {% if selected_nas_id == nas.id|stringformat:"s" %}selected{% endif %}>
+                                            {{ nas.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Thao tác</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="operation">
+                                    <option value="">Tất cả</option>
+                                    <option value="upload" {% if operation_filter == "upload" %}selected{% endif %}>Upload</option>
+                                    <option value="download" {% if operation_filter == "download" %}selected{% endif %}>Download</option>
+                                    <option value="delete" {% if operation_filter == "delete" %}selected{% endif %}>Delete</option>
+                                    <option value="create_folder" {% if operation_filter == "create_folder" %}selected{% endif %}>Create Folder</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-narrow">
+                    <div class="field">
+                        <label class="label">&nbsp;</label>
+                        <div class="control">
+                            <button type="submit" class="button is-primary">Tìm kiếm</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Danh sách operations -->
+<div class="card">
+    <header class="card-header">
+        <p class="card-header-title">
+            Danh sách thao tác ({{ page_obj.paginator.count }} bản ghi)
+        </p>
+    </header>
+    <div class="card-content">
+        <div class="content">
+            <table class="table is-fullwidth is-hoverable">
+                <thead>
+                    <tr>
+                        <th>NAS</th>
+                        <th>Người thực hiện</th>
+                        <th>Thao tác</th>
+                        <th>File/Folder</th>
+                        <th>Kích thước</th>
+                        <th>IP Address</th>
+                        <th>Thời gian</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for operation in operations %}
+                    <tr>
+                        <td>{{ operation.nas.name }}</td>
+                        <td>{{ operation.user.get_full_name|default:operation.user.username }}</td>
+                        <td>
+                            <span class="tag is-info">{{ operation.get_operation_display }}</span>
+                        </td>
+                        <td>{{ operation.file_path|truncatewords:10 }}</td>
+                        <td>
+                            {% if operation.file_size %}
+                                {{ operation.file_size|filesizeformat }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ operation.ip_address|default:"-" }}</td>
+                        <td>{{ operation.timestamp|date:"d/m/Y H:i:s" }}</td>
+                        <td>
+                            {% if operation.is_success %}
+                                <span class="tag is-success">Thành công</span>
+                            {% else %}
+                                <span class="tag is-danger">Thất bại</span>
+                                {% if operation.error_message %}
+                                    <br><small class="has-text-danger">{{ operation.error_message|truncatewords:5 }}</small>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="has-text-centered has-text-grey">Chưa có dữ liệu</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Phân trang -->
+        {% if page_obj.has_other_pages %}
+        <nav class="pagination is-centered" role="navigation" aria-label="pagination">
+            {% if page_obj.has_previous %}
+                <a class="pagination-previous" href="?page={{ page_obj.previous_page_number }}{% if selected_nas_id %}&nas_id={{ selected_nas_id }}{% endif %}{% if operation_filter %}&operation={{ operation_filter }}{% endif %}">Trước</a>
+            {% else %}
+                <a class="pagination-previous" disabled>Trước</a>
+            {% endif %}
+            
+            {% if page_obj.has_next %}
+                <a class="pagination-next" href="?page={{ page_obj.next_page_number }}{% if selected_nas_id %}&nas_id={{ selected_nas_id }}{% endif %}{% if operation_filter %}&operation={{ operation_filter }}{% endif %}">Sau</a>
+            {% else %}
+                <a class="pagination-next" disabled>Sau</a>
+            {% endif %}
+            
+            <ul class="pagination-list">
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li><a class="pagination-link is-current" aria-label="Page {{ num }}" aria-current="page">{{ num }}</a></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li><a class="pagination-link" href="?page={{ num }}{% if selected_nas_id %}&nas_id={{ selected_nas_id }}{% endif %}{% if operation_filter %}&operation={{ operation_filter }}{% endif %}" aria-label="Goto page {{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
