@@ -4,3 +4,6 @@ openpyxl
 gunicorn
 psycopg2-binary
 python-decouple
+djangorestframework>=3.14.0
+django-cors-headers>=4.3.0
+ldap3>=2.9.1

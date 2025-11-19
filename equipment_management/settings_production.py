@@ -11,7 +11,9 @@ from pathlib import Path
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',')
+# ALLOWED_HOSTS - mặc định bao gồm ccdc.saigonbooks.vn
+default_hosts = 'ccdc.saigonbooks.vn,www.ccdc.saigonbooks.vn'
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default=default_hosts).split(',') if config('ALLOWED_HOSTS', default='') else default_hosts.split(',')
 
 # Database - PostgreSQL
 DATABASES = {
